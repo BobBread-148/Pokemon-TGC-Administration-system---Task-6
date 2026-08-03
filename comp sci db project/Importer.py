@@ -82,12 +82,16 @@ def insert_trainer(card):
 
     subtype = card.get("subtypes", ["Item"])[0]
 
+    if subtype == "Pokémon Tool":
+        subtype = "Tool"
+
     rules = "\n".join(card.get("rules", []))
 
     cursor.execute("""
     INSERT OR IGNORE INTO TrainerCard
     VALUES (?,?,?)
-    """, (
+    """,
+    (
         card["id"],
         subtype,
         rules
@@ -152,6 +156,29 @@ def insert_attack(card):
             attack.get("text")
         ))
 
+def insert_player(player):
+    cursor.execute("""
+    INSERT OR IGNORE INTO Player VALUES (?,?,?,?,?,?)
+    """,
+    (
+        player["PlayerID"],
+        player["Username"],
+        player["DateJoined"],
+        player["DateOfBirth"],
+        player["PhoneNumber"],
+        player["Email"]
+    ))
+
+def import_players():
+    with open("player data/players.json", encoding="utf-8") as file:
+        players = json.load(file)
+
+    for player in players:
+        insert_player(player)
+
+    conn.commit()
+    print("Player import complete!")
+
 def import_cards():
     for filename in os.listdir("card data"):
         if filename.endswith(".json") and filename != "sets.json":
@@ -182,6 +209,7 @@ def import_cards():
     
 def main():
     import_cards()
+    import_players()
     conn.close()
     
     
