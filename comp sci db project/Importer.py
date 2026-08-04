@@ -144,14 +144,37 @@ def insert_attack(card):
 
         attack_id = f'{card["id"]}-AT{i}'
 
+        damage = attack.get("damage")
+
+        damage_value = None
+        damage_modifier = None
+
+        if damage and damage not in ["—", "-"]:
+            try:
+                if damage.endswith("+"):
+                    damage_modifier = "+"
+                    damage_value = int(damage[:-1])
+
+                elif damage.endswith("×"):
+                    damage_modifier = "×"
+                    damage_value = int(damage[:-1])
+
+                else:
+                    damage_value = int(damage)
+
+            except ValueError:
+                damage_value = None
+
+
         cursor.execute("""
         INSERT OR IGNORE INTO AttackDetails
-        VALUES (?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?)
         """, (
             attack_id,
             card["id"],
             attack["name"],
-            attack.get("damage", ""),
+            damage_value,
+            damage_modifier,
             len(attack.get("cost", [])),
             attack.get("text")
         ))
