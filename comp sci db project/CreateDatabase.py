@@ -12,7 +12,7 @@ def create_tables():
         cursor.execute("DROP TABLE IF EXISTS PlayerCollection;")
         cursor.execute("DROP TABLE IF EXISTS RegistrationList;")
         cursor.execute("DROP TABLE IF EXISTS TournamentStaff;")
-        cursor.execute("DROP TABLE IF EXISTS Match;")
+        cursor.execute("DROP TABLE IF EXISTS Matches;")
         cursor.execute("DROP TABLE IF EXISTS AttackDetails;")
         cursor.execute("DROP TABLE IF EXISTS CardAbility;")
         cursor.execute("DROP TABLE IF EXISTS CreatureCard;")
@@ -31,7 +31,7 @@ def create_tables():
             PlayerID TEXT(4) PRIMARY KEY,
             Username TEXT(20) NOT NULL,
             DateJoined DATE DEFAULT (CURRENT_DATE),
-            DateOfBirth DATE NOT NULL,
+            DateOfBirth DATE NOT NULL CHECK (DateOfBirth < CURRENT_DATE),
             PhoneNumber TEXT(17),
             Email TEXT(30) NOT NULL CHECK (Email LIKE '%@%')
         ); """)
@@ -42,32 +42,32 @@ def create_tables():
             TournamentName TEXT(20) NOT NULL,
             EventDate DATE NOT NULL,
             Location TEXT(30) NOT NULL,
-            EventStatus TEXT CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Over')) 
+            EventStatus TEXT DEFAULT 'Upcoming' CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Over')) 
         ); """)
 
         cursor.execute("""
         CREATE TABLE RegistrationList(
             TournamentID TEXT(4) NOT NULL,
             PlayerID TEXT(4) NOT NULL,
-            PRIMARY KEY (PlayerID, TournamentID),
+            PRIMARY KEY (TournamentID, PlayerID),
             FOREIGN KEY (TournamentID) REFERENCES Tournament(TournamentID),
             FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID)
         ); """)
 
         cursor.execute("""
-        CREATE TABLE Match(
-            MatchID TEXT(4) PRIMARY KEY NOT NULL UNIQUE,
+        CREATE TABLE Matches(
+            MatchesID TEXT(4) PRIMARY KEY NOT NULL UNIQUE,
             TournamentID TEXT(4) NOT NULL,
             Player1 TEXT(4) NOT NULL,
             Player2 TEXT(4) NOT NULL,
             Winner TEXT(4), 
-            MatchStatus TEXT NOT NULL,
+            MatchStatus TEXT NOT NULL DEFAULT 'To be played',
             Round INTEGER(1) NOT NULL,
             FOREIGN KEY (TournamentID) REFERENCES Tournament(TournamentID),
             FOREIGN KEY (TournamentID, Player1) REFERENCES RegistrationList(TournamentID, PlayerID),
             FOREIGN KEY (TournamentID, Player2) REFERENCES RegistrationList(TournamentID, PlayerID),
             FOREIGN KEY (Winner) REFERENCES Player(PlayerID),
-            CONSTRAINT check_valid_winner CHECK (Winner = Player1 OR Winner = Player2 OR Winner IS NULL),
+            CONSTRAINT check_valid_winner CHECK (MatchStatus ='Finished' AND Winner IS NOT NULL OR MatchStatus!='Finished'),
             CONSTRAINT match_status CHECK (MatchStatus IN ('To be played', 'In progress', 'Finished'))
         ); """)
 
@@ -78,14 +78,14 @@ def create_tables():
             Password TEXT(30) NOT NULL,
             Email TEXT(30) NOT NULL CHECK (Email LIKE ('%@%')),
             PhoneNumber TEXT(17) NOT NULL,
-            Position TEXT(20) NOT NULL
+            Position TEXT(20) NOT NULL CHECK (Position IN ('Administrator', 'Moderator', 'Staff'))
         );""")  
 
         cursor.execute("""
         CREATE TABLE TournamentStaff(
             TournamentID TEXT(4) NOT NULL,
             StaffID TEXT(4) NOT NULL,
-            Role TEXT(20) NOT NULL,
+            Role TEXT(20) NOT NULL CHECK (Role IN ('Judge', 'Organiser', 'Scorekeeper', ' Demonstrator')),
             PRIMARY KEY (TournamentID, StaffID),
             FOREIGN KEY (StaffID) REFERENCES Staff(StaffID),
             FOREIGN KEY (TournamentID) REFERENCES Tournament(TournamentID)
@@ -104,7 +104,7 @@ def create_tables():
             CardID TEXT PRIMARY KEY,
             SetID TEXT NOT NULL,
             CardName TEXT(20) NOT NULL,
-            CardType TEXT CHECK (CardType IN ('Creature Card', 'Trainer Card', 'Energy Card')),
+            CardType TEXT NOT NULL CHECK (CardType IN ('Creature Card', 'Trainer Card', 'Energy Card')),
             CardNumber TEXT NOT NULL,
             Rarity TEXT NOT NULL,
             FOREIGN KEY (SetID) REFERENCES CardSet(SetID)
@@ -132,7 +132,7 @@ def create_tables():
         CREATE TABLE CardInDeck(
             DeckID TEXT(4) NOT NULL,
             CardID TEXT NOT NULL,
-            Quantity INTEGER(3) NOT NULL,
+            Quantity INTEGER(3) NOT NULL CHECK (Quantity > 0),
             PRIMARY KEY(DeckID, CardID), 
             FOREIGN KEY (DeckID) REFERENCES Deck(DeckID),
             FOREIGN KEY (CardID) REFERENCES Card(CardID) 
@@ -153,10 +153,10 @@ def create_tables():
         cursor.execute("""
         CREATE TABLE CardAbility(
             AbilityID TEXT PRIMARY KEY,
-            CardID TEXT,
+            CardID TEXT NOT NULL,
             AbilityName TEXT NOT NULL,
             AbilityType TEXT NOT NULL,
-            Description NOT NULL,
+            Description TEXT NOT NULL,
             FOREIGN KEY (CardID) REFERENCES Card(CardID)
         ); """)
 
@@ -165,7 +165,8 @@ def create_tables():
             AttackID TEXT PRIMARY KEY NOT NULL,
             CardID TEXT NOT NULL,
             AttackName TEXT(20) NOT NULL,
-            Damage TEXT NOT NULL,
+            DamageValue INTEGER,
+            DamageModifier TEXT CHECK(DamageModifier IN ('+', '×') OR DamageModifier IS NULL),
             EnergyCost INTEGER(3) NOT NULL,
             Effect TEXT,
             FOREIGN KEY (CardID) REFERENCES Card(CardID)
@@ -192,7 +193,7 @@ def create_tables():
         CREATE TABLE Trade(
             TradeID TEXT(4) PRIMARY KEY NOT NULL,
             SenderID TEXT(4) NOT NULL,
-            ReceiverID TEXT(4) NOT NULL Check (ReceiverID IS NOT SenderID),
+            ReceiverID TEXT(4) NOT NULL Check (ReceiverID <> SenderID),
             TradeDate DATE NOT NULL,
             TradeStatus TEXT(10) NOT NULL CHECK (TradeStatus IN ('Pending', 'Completed')),
             FOREIGN KEY (SenderID) REFERENCES Player(PlayerID),
@@ -204,7 +205,8 @@ def create_tables():
             TradeID TEXT(4),
             CardID TEXT(4),
             Owner TEXT(4),
-            Quantity INTEGER(3) NOT NULL,
+            Quantity INTEGER(3) NOT NULL CHECK (Quantity > 0),
+            PRIMARY KEY(TradeID, CardID),
             FOREIGN KEY (TradeID) REFERENCES Trade(TradeID),
             FOREIGN KEY (CardID) References Card(CardID)
         );""")
