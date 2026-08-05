@@ -42,7 +42,7 @@ def create_tables():
             TournamentName TEXT(20) NOT NULL,
             EventDate DATE NOT NULL,
             Location TEXT(30) NOT NULL,
-            EventStatus TEXT DEFAULT 'Upcoming' CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Over')) 
+            EventStatus TEXT DEFAULT 'Upcoming' CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Finished')) 
         ); """)
 
         cursor.execute("""
@@ -74,6 +74,8 @@ def create_tables():
         cursor.execute("""
         CREATE TABLE Staff(
             StaffID TEXT(4) PRIMARY KEY NOT NULL,
+            FirstName TEXT(20) NOT NULL,
+            LastName TEXT(20) NOT NULL,
             Username TEXT(20) NOT NULL,
             Password TEXT(30) NOT NULL,
             Email TEXT(30) NOT NULL CHECK (Email LIKE ('%@%')),
