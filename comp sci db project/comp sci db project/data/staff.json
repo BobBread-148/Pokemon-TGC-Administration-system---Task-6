@@ -308,25 +308,5 @@
     "Email": "fajar.q08@gmail.com",
     "PhoneNumber": "+61 412 938 451",
     "Position": "Administrator"
-  },
-  {
-    "StaffID": "S032",
-    "Username": "ari",
-    "Password": "ArishaAlam",
-    "FirstName": "Arisha",
-    "LastName": "Alam",
-    "Email": "ari.alam@gmail.com",
-    "PhoneNumber": "+61 412 938 451",
-    "Position": "Moderator"
-  },  
-  {
-    "StaffID": "S033",
-    "Username": "whatever",
-    "Password": "NoorainFatima",
-    "FirstName": "Noorain",
-    "LastName": "Fatima",
-    "Email": "noorain.fatima@gmail.com",
-    "PhoneNumber": "+61 412 938 451",
-    "Position": "Staff"
   }
 ]

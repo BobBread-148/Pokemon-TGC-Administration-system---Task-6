@@ -3,7 +3,7 @@ import sqlite3
 conn = sqlite3.connect("PokemonOnlineTCG_Database.db")
 cursor = conn.cursor()
 
-cursor.execute("PRAGMA foreign_keys = OFF;")
+cursor.execute("PRAGMA foreign_keys = ON;")
 
 def create_tables():
     try:
@@ -25,8 +25,6 @@ def create_tables():
         cursor.execute("DROP TABLE IF EXISTS Tournament;")
         cursor.execute("DROP TABLE IF EXISTS Staff;")
         cursor.execute("DROP TABLE IF EXISTS Player;")
-
-        cursor.execute("PRAGMA foreign_keys = ON;")
 
         cursor.execute("""               
         CREATE TABLE Player(
@@ -89,7 +87,7 @@ def create_tables():
         CREATE TABLE TournamentStaff(
             TournamentID TEXT(4) NOT NULL,
             StaffID TEXT(4) NOT NULL,
-            Role TEXT(20) NOT NULL CHECK (Role IN ('Judge', 'Organiser', 'Scorekeeper', 'Demonstrator', 'Support Staff')),
+            Role TEXT(20) NOT NULL CHECK (Role IN ('Judge', 'Organiser', 'Scorekeeper', ' Demonstrator')),
             PRIMARY KEY (TournamentID, StaffID),
             FOREIGN KEY (StaffID) REFERENCES Staff(StaffID),
             FOREIGN KEY (TournamentID) REFERENCES Tournament(TournamentID)
