@@ -1,0 +1,62 @@
+[
+  {
+    "VenueID": "V001",
+    "VenueName": "Rod Laver Arena",
+    "VenueCity": "Melbourne",
+    "VenueCountry": "Australia"
+  },
+  {
+    "VenueID": "V002",
+    "VenueName": "Stade Roland Garros",
+    "VenueCity": "Paris",
+    "VenueCountry": "France"
+  },
+  {
+    "VenueID": "V003",
+    "VenueName": "All England Club",
+    "VenueCity": "London",
+    "VenueCountry": "UK"
+  },
+  {
+    "VenueID": "V004",
+    "VenueName": "Billie Jean King Tennis Center",
+    "VenueCity": "New York",
+    "VenueCountry": "USA"
+  },
+  {
+    "VenueID": "V005",
+    "VenueName": "Estadio Azteca",
+    "VenueCity": "Mexico City",
+    "VenueCountry": "Mexico"
+  },
+  {
+    "VenueID": "V006",
+    "VenueName": "Spodek Arena",
+    "VenueCity": "Katowice",
+    "VenueCountry": "Poland"
+  },
+  {
+    "VenueID": "V007",
+    "VenueName": "Lanxess Arena",
+    "VenueCity": "Cologne",
+    "VenueCountry": "Germany"
+  },
+  {
+    "VenueID": "V008",
+    "VenueName": "Mercedes-Benz Stadium",
+    "VenueCity": "Atlanta",
+    "VenueCountry": "USA"
+  },
+  {
+    "VenueID": "V009",
+    "VenueName": "Sobeys Stadium",
+    "VenueCity": "Toronto",
+    "VenueCountry": "Canada"
+  },
+  {
+    "VenueID": "V010",
+    "VenueName": "Foro Italico",
+    "VenueCity": "Rome",
+    "VenueCountry": "Italy"
+  }
+]

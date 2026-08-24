@@ -23,8 +23,11 @@ def create_tables():
         cursor.execute("DROP TABLE IF EXISTS Card;")
         cursor.execute("DROP TABLE IF EXISTS CardSet;")
         cursor.execute("DROP TABLE IF EXISTS Tournament;")
+        cursor.execute("DROP TABLE IF EXISTS Venue;")
         cursor.execute("DROP TABLE IF EXISTS Staff;")
         cursor.execute("DROP TABLE IF EXISTS Player;")
+
+        conn.commit()
 
         cursor.execute("PRAGMA foreign_keys = ON;")
 
@@ -39,12 +42,21 @@ def create_tables():
         ); """)
 
         cursor.execute("""
+        CREATE TABLE Venue(
+            VenueID TEXT PRIMARY KEY NOT NULL UNIQUE,
+            VenueName TEXT NOT NULL,
+            VenueCity TEXT NOT NULL,
+            VenueCountry TEXT NOT NULL
+        ); """)
+
+        cursor.execute("""
         CREATE TABLE Tournament(
             TournamentID TEXT(4) PRIMARY KEY NOT NULL UNIQUE,
             TournamentName TEXT(20) NOT NULL,
             EventDate DATE NOT NULL,
-            Location TEXT(30) NOT NULL,
-            EventStatus TEXT DEFAULT 'Upcoming' CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Finished')) 
+            VenueID TEXT NOT NULL,
+            EventStatus TEXT DEFAULT 'Upcoming' CHECK (EventStatus IN ('Upcoming', 'Ongoing', 'Finished')) ,
+            FOREIGN KEY (VenueID) REFERENCES Venue(VenueID)
         ); """)
 
         cursor.execute("""
@@ -120,7 +132,7 @@ def create_tables():
             CardID TEXT NOT NULL,
             Quantity INTEGER(3) NOT NULL,
             PRIMARY KEY(PlayerID, CardID),
-            FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID),
+            FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID) ON DELETE CASCADE,
             FOREIGN KEY (CardID) REFERENCES Card(CardID)
         );""")
 
@@ -129,7 +141,7 @@ def create_tables():
             DeckID TEXT(4) PRIMARY KEY NOT NULL,
             PlayerID TEXT(4) NOT NULL,
             DeckName TEXT(20) NOT NULL,
-            FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID)
+            FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID) ON DELETE CASCADE
         );""")
 
         cursor.execute("""
@@ -138,7 +150,7 @@ def create_tables():
             CardID TEXT NOT NULL,
             Quantity INTEGER(3) NOT NULL CHECK (Quantity > 0),
             PRIMARY KEY(DeckID, CardID), 
-            FOREIGN KEY (DeckID) REFERENCES Deck(DeckID),
+            FOREIGN KEY (DeckID) REFERENCES Deck(DeckID) ON DELETE CASCADE,
             FOREIGN KEY (CardID) REFERENCES Card(CardID) 
         );""")
 

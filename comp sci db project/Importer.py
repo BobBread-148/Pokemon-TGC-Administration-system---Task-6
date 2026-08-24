@@ -256,30 +256,63 @@ def import_staff():
 
     conn.commit()
     print("Staff import complete!")
+import json
 
+def insert_venue(venue):
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO Venue (VenueID, VenueName, VenueCity, VenueCountry)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            venue["VenueID"],
+            venue["VenueName"],
+            venue["VenueCity"],
+            venue["VenueCountry"]
+        )
+    )
+
+def import_venues():
+    try:
+        with open("data/venue.json", "r", encoding="utf-8") as file:
+            venues = json.load(file)
+
+        for venue in venues:
+            insert_venue(venue)
+
+        conn.commit()
+        print("Venue import complete!")
+    except FileNotFoundError:
+        print("Error: 'data/venue.json' file not found.")
 def insert_tournament(tournament):
-    cursor.execute("""
-    INSERT OR IGNORE INTO Tournament
-    VALUES (?,?,?,?,?)
-    """,
-    (
-        tournament["TournamentID"],
-        tournament["TournamentName"],
-        tournament["EventDate"],
-        tournament["Location"],
-        tournament["EventStatus"]
-    ))
-
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO Tournament (TournamentID, TournamentName, EventDate, VenueID, EventStatus)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            tournament["TournamentID"],
+            tournament["TournamentName"],
+            tournament["EventDate"],
+            tournament["VenueID"],
+            tournament["EventStatus"]
+        )
+    )
 
 def import_tournaments():
-    with open("data/tournaments.json", encoding="utf-8") as file:
-        tournaments = json.load(file)
+    try:
+        with open("data/tournaments.json", "r", encoding="utf-8") as file:
+            tournaments = json.load(file)
 
-    for tournament in tournaments:
-        insert_tournament(tournament)
+        for tournament in tournaments:
+            insert_tournament(tournament)
 
-    conn.commit()
-    print("Tournament import complete!")
+        conn.commit()
+        print("Tournament import complete!")
+    except FileNotFoundError:
+        print("Error: 'data/tournaments.json' file not found.")
+
+
 
 def insert_registration(registration):
     cursor.execute("""
@@ -472,6 +505,7 @@ def main():
     import_cards()
     import_players()
     import_staff()
+    import_venues()
     import_tournaments()
     import_registrations()
     import_tournament_staff()
@@ -493,6 +527,7 @@ def main():
         "TrainerCard",
         "EnergyCard",
         "Tournament",
+        "Venue",
         "Staff",
         "RegistrationList",
         "TournamentStaff",

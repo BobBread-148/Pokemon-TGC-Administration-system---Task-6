@@ -3,70 +3,70 @@
     "TournamentID": "T001",
     "TournamentName": "World Masters",
     "EventDate": "2025-11-15",
-    "Location": "Tokyo, Japan",
+    "VenueID": "V001",
     "EventStatus": "Finished"
   },
   {
     "TournamentID": "T002",
     "TournamentName": "European Open",
     "EventDate": "2025-09-21",
-    "Location": "Berlin, Germany",
+    "VenueID": "V002",
     "EventStatus": "Finished"
   },
   {
     "TournamentID": "T003",
     "TournamentName": "Americas Cup",
     "EventDate": "2026-01-18",
-    "Location": "New York, USA",
+    "VenueID": "V003",
     "EventStatus": "Finished"
   },
   {
     "TournamentID": "T004",
     "TournamentName": "Oceania Challenge",
     "EventDate": "2026-03-07",
-    "Location": "Melbourne, Australia",
+    "VenueID": "V004",
     "EventStatus": "Finished"
   },
   {
     "TournamentID": "T005",
     "TournamentName": "Asia Pacific",
     "EventDate": "2026-05-23",
-    "Location": "Singapore",
+    "VenueID": "V005",
     "EventStatus": "Finished"
   },
   {
     "TournamentID": "T006",
     "TournamentName": "Brazil Regional",
     "EventDate": "2026-07-12",
-    "Location": "Sao Paulo, Brazil",
+    "VenueID": "V006",
     "EventStatus": "Ongoing"
   },
   {
     "TournamentID": "T007",
     "TournamentName": "India League",
     "EventDate": "2026-08-10",
-    "Location": "Mumbai, India",
+    "VenueID": "V007",
     "EventStatus": "Ongoing"
   },
   {
     "TournamentID": "T008",
     "TournamentName": "UK Championship",
     "EventDate": "2026-09-05",
-    "Location": "London, UK",
+    "VenueID": "V008",
     "EventStatus": "Upcoming"
   },
   {
     "TournamentID": "T009",
     "TournamentName": "Africa Open",
     "EventDate": "2026-10-17",
-    "Location": "Cape Town, South Africa",
+    "VenueID": "V009",
     "EventStatus": "Upcoming"
   },
   {
     "TournamentID": "T010",
     "TournamentName": "Trainer Rising Cup",
     "EventDate": "2026-11-28",
-    "Location": "Toronto, Canada",
+    "VenueID": "V010",
     "EventStatus": "Upcoming"
   }
 ]

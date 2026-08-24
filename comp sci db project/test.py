@@ -1,81 +1,33 @@
+from ast import Try
 import sqlite3
 import sys
 import os
+import datetime
+from datetime import date
+
+sqlite3.register_adapter(datetime.date, lambda val: val.isoformat())
+sqlite3.register_adapter(datetime.datetime, lambda val: val.isoformat())
+
 
 conn = sqlite3.connect("PokemonOnlineTCG_Database.db")
 cursor = conn.cursor()
 cursor.execute("PRAGMA foreign_keys = ON;")
 
-cursor.execute("SELECT PlayerID, Username FROM Player;")
-a = cursor.fetchone()
+
+
+
+
+
+
+
+
+
+#matches id, player1 id, player 1 username, player 2 id, player 2 user, winner, matchstatus, round
 cursor.execute("""
-SELECT SUM(Quantity) FROM PlayerCollection 
-WHERE PlayerID = "P001"
-""")
-b = cursor.fetchone()
-cursor.execute("""
-SELECT Card.CardName, Card.Rarity FROM Card
-JOIN PLayerCollection ON PLayerCollection.CardID = Card.CardID
-JOIN PLayer ON PlayerCollection.PlayerID = Player.PlayerID
-WHERE Player.PlayerID = 'P001'
-    ORDER BY
-        CASE Card.Rarity
-            WHEN 'Special Illustration Rare' THEN 1
-            WHEN 'Illustration Rare'         THEN 2
-            WHEN 'Hyper Rare'                THEN 3
-            WHEN 'Ultra Rare'                THEN 4
-            WHEN 'Ace Spec'                  THEN 5
-            WHEN 'Double Rare'               THEN 6
-            WHEN 'Rare Holo'                 THEN 7
-            WHEN 'Rare'                      THEN 8
-            WHEN 'Uncommon'                  THEN 9
-            WHEN 'Common'                    THEN 10
-            ELSE 11
-        END ASC
-    LIMIT 1;
-""")
-c = cursor.fetchone()
-cursor.execute("SELECT COUNT(DeckID) FROM Deck WHERE PlayerID = 'P001'")
-d = cursor.fetchone()
-cursor.execute("SELECT Deck.DeckName FROM Deck WHERE PlayerID = 'P001'")
-e = cursor.fetchall()
-cursor.execute("""
-SELECT TournamentName FROM Tournament
-JOIN RegistrationList ON RegistrationList.TournamentID = Tournament.TournamentID
+--matches id, player1 id, player 1 username, player 2 id, player 2 user, winner, matchstatus, round
+SELECT m.MatchesID, m.Player1, p1.Username, m.Player2, p2.Username, m.Winner, p3.username m.MatchStatus, m.Round
+FROM Matches 
+JOIN RegistrationList ON Matches.TournamentID = RegistrationList.TournamentID
 JOIN Player ON Player.PlayerID = RegistrationList.PlayerID
-WHERE Player.PlayerID = 'P001'
-""")
-f = cursor.fetchall()
-cursor.execute("SELECT COUNT(MatchesID) FROM Matches WHERE Player1 = 'P001' OR Player2 = 'P001'")
-g = cursor.fetchone()
-cursor.execute("SELECT COUNT(MatchesID) FROM Matches WHERE Winner = 'P001'")
-h = cursor.fetchone()
-#print(h)
-
-cursor.executemany("""
-SELECT PlayerID, Username FROM Player;
-SELECT SUM(Quantity) FROM PlayerCollection 
-WHERE PlayerID = "P001";
-SELECT Card.CardName, Card.Rarity FROM Card
-JOIN PLayerCollection ON PLayerCollection.CardID = Card.CardID
-JOIN PLayer ON PlayerCollection.PlayerID = Player.PlayerID
-WHERE Player.PlayerID = 'P001'
-    ORDER BY
-        CASE Card.Rarity
-            WHEN 'Special Illustration Rare' THEN 1
-            WHEN 'Illustration Rare'         THEN 2
-            WHEN 'Hyper Rare'                THEN 3
-            WHEN 'Ultra Rare'                THEN 4
-            WHEN 'Ace Spec'                  THEN 5
-            WHEN 'Double Rare'               THEN 6
-            WHEN 'Rare Holo'                 THEN 7
-            WHEN 'Rare'                      THEN 8
-            WHEN 'Uncommon'                  THEN 9
-            WHEN 'Common'                    THEN 10
-            ELSE 11
-        END ASC
-    LIMIT 1;
-""")
-
-print(cursor.fetchmany())
-
+WHERE Matches.TournamentID = 'T001';
+""") 
