@@ -1,4 +1,5 @@
 from ast import Try
+from builtins import input
 import sqlite3
 import sys
 import os
@@ -795,7 +796,7 @@ def manage_tournaments():
     elif user_position == "Staff":
         clear_screen()
         print("-" * 50)
-        print("              Manage Players")
+        print("              Manage Tournaments")
         print("-" * 50)
         print("  [1] View Tournament Details")
         print("  [2] Register/Remove player from Tournament")
@@ -1437,9 +1438,10 @@ def manage_matches():
     elif user_position == "Staff":
         clear_screen()
         print("-" * 50)
-        print("              Manage Players")
+        print("              Manage Matches")
         print("-" * 50)
-        print("  [1] View Tournament Details")
+        print("  [1] View Match Details")
+        print("  [2] Edit Match Details")
         print("  [0] Back to Main Menu")
         print("")
         return input("\nSelect an option: ").strip()
@@ -1692,65 +1694,211 @@ def edit_match_details():
 
 def edit_match_details_checks(matches, cursor):
     print_as_table(cursor, matches)
+
     matchid = matches[0]
-    print("Please enter the match data you wish to change. If you do not wish to change anything in the specific column, just click enter.")
 
-    #tournamentid
-    #player1
-    #player1
+    print("Please enter the match data you wish to change.")
+    print("If you do not wish to change anything in a specific column, just click enter.")
 
+    # Tournament ID
     while True:
-        winner = input("Enter winner:")
-        if winner in [matches[2], matches[3]]:
+        tournamentid = input("Enter Tournament ID: ")
+
+        if tournamentid == "":
+            tournamentid = matches[1]
             break
-        elif winner == "":
-            winner = matches[4]
+
+        cursor.execute(
+            """
+            SELECT TournamentID
+            FROM Tournament
+            WHERE TournamentID = ?
+            """,
+            (tournamentid,)
+        )
+
+        if cursor.fetchone():
             break
         else:
-            print("Enter valid player ID:")
+            print("Enter a valid Tournament ID.")
             pause_screen()
 
+    # Player 1
     while True:
-        match_status = input("Enter Match Status ('To be played', 'In progress', 'Finished'):")
-        if match_status in ["To be played", "In progress", "Finished"]:
+        player1 = input("Enter Player 1 ID: ")
+
+        if player1 == "":
+            player1 = matches[2]
             break
-        elif match_status == "":
+
+        cursor.execute(
+            """
+            SELECT PlayerID
+            FROM RegistrationList
+            WHERE TournamentID = ? AND PlayerID = ?
+            """,
+            (tournamentid, player1)
+        )
+
+        if cursor.fetchone():
+            break
+        else:
+            print("Player 1 must be registered for this tournament.")
+            pause_screen()
+
+    # Player 2
+    while True:
+        player2 = input("Enter Player 2 ID: ")
+
+        if player2 == "":
+            player2 = matches[3]
+            break
+
+        if player2 == player1:
+            print("Player 1 and Player 2 cannot be the same player.")
+            pause_screen()
+            continue
+
+        cursor.execute(
+            """
+            SELECT PlayerID
+            FROM RegistrationList
+            WHERE TournamentID = ? AND PlayerID = ?
+            """,
+            (tournamentid, player2)
+        )
+
+        if cursor.fetchone():
+            break
+        else:
+            print("Player 2 must be registered for this tournament.")
+            pause_screen()
+
+    # Winner
+    while True:
+        winner = input("Enter winner (Player ID): ")
+
+        # User wants to keep existing winner
+        if winner == "":
+            winner = matches[4]
+
+            # If there is no existing winner, that's fine
+            if winner is None:
+                break
+
+            # Make sure existing winner is still one of the new players
+            if winner == player1 or winner == player2:
+                break
+
+            print(
+                "The current winner is no longer one of the players "
+                "in this match."
+            )
+            print("Please enter a new winner.")
+            pause_screen()
+            continue
+
+        # User entered a new winner
+        if winner == player1 or winner == player2:
+            break
+
+        print("Winner must be either Player 1 or Player 2.")
+        pause_screen()
+
+    # Match Status
+    while True:
+        match_status = input(
+            "Enter Match Status "
+            "('To be played', 'In progress', 'Finished'): "
+        )
+
+        if match_status == "":
             match_status = matches[5]
             break
+
+        elif match_status in [
+            "To be played",
+            "In progress",
+            "Finished"
+        ]:
+            break
+
         else:
-            print("Enter from 'To be played', 'In progress', or 'Finished':")
+            print(
+                "Enter from 'To be played', "
+                "'In progress', or 'Finished'."
+            )
             pause_screen()
 
+    # Make Winner and MatchStatus agree
+    if match_status == "Finished":
+
+        # Finished matches MUST have a winner
+        while winner is None:
+            print("A finished match must have a winner.")
+
+            winner = input("Enter winner (Player ID): ")
+
+            if winner == player1 or winner == player2:
+                break
+
+            print("Winner must be either Player 1 or Player 2.")
+            pause_screen()
+
+    else:
+
+        # Unfinished matches cannot have a winner
+        winner = None
+
+    # Round
     while True:
+        round_input = input("Enter round number: ")
+
+        if round_input == "":
+            round_number = matches[6]
+            break
+
         try:
-            round_number = int(input("Enter round number:"))
-        except:
-            pass
+            round_number = int(round_input)
 
-        
+            if round_number > 0:
+                break
 
+            print("Round number must be greater than 0.")
+            pause_screen()
 
-        if round_number:
-            pass
+        except ValueError:
+            print("Enter a valid whole number.")
+            pause_screen()
 
+    # Update Match
     cursor.execute(
         """
-        UPDATE Tournament
-        SET TournamentName = ?, EventDate = ?, Location = ?, EventStatus = ?
-        WHERE TournamentID = ?
+        UPDATE Matches
+        SET TournamentID = ?,
+            Player1 = ?,
+            Player2 = ?,
+            Winner = ?,
+            MatchStatus = ?,
+            Round = ?
+        WHERE MatchesID = ?
         """,
         (
-            new_tournamentname,
-            new_date,
-            new_location,
-            new_status,
-            tournamentid
-        ))
+            tournamentid,
+            player1,
+            player2,
+            winner,
+            match_status,
+            round_number,
+            matchid
+        )
+    )
 
     conn.commit()
 
-    print("Tournament details updated successfully.")
+    print("Match details updated successfully.")
     pause_screen()
+
 
 
 def delete_match():
@@ -1800,14 +1948,139 @@ def delete_match():
 
 
 def manage_cards():
-    pass
+    if user_position in ["Administrator", "Moderator"]:
+        clear_screen()
+        print("-" * 75)
+        print("                       Manage Cards")
+        print("-" * 75)
+        print("  [1] View Card Details           [4] Delete Card")
+        print("  [2] Edit Card Details           [0] Back to Main Menu ")
+        print("  [3] Create Card  ")
+        print("")
+        return input("\nSelect an option: ").strip()
+    elif user_position == "Staff":
+        return
+
+
 
 def view_card_details():
     #search specific card by cardID OR cardName
     #view list of cards by element/type/rarity AND count total number of cards
     #view all cards sorted by HP DESC
-    #view al cards with HP higher than a specific value
-    pass
+    #view all cards with HP higher than a specific value
+    while True:
+        clear_screen()
+        print("-" * 60)
+        print("                     View Card Details")
+        print("-" * 60)
+        category = input("""
+[1] View Specific Card Details                     [4] View cards with HP higher than -
+[2] View all cards of a specific element/rarity    [0] Back
+[3] View all cards""")
+        
+        if category == "0":
+            break
+        elif category == "1":
+            while True:
+                clear_screen()
+                print("-" * 60)
+                print("             View Specific Card Details")
+                print("-" * 60)
+
+                while True:
+                    choice = input("Search by Card 'Name' or 'ID' (or type 'back')").strip().lower()
+                    if choice == "back":
+                        break
+                    elif choice == "id":
+                        card_id = input("Enter Card ID:")
+                        cursor.execute("SELECT * FROM Card WHERE CardID = ?", (card_id,))
+                        card = cursor.fetchone()
+                        if card:
+                            print_as_table(cursor, card)
+                            pause_screen()
+                        else:
+                            print("\nInvalid Card ID")
+                            pause_screen()
+                    elif choice == "name":
+                        cardname = input("Enter Card Name:")
+                        cursor.execute("SELECT * FROM Card WHERE CardName = ?", (cardname,))
+                        card = cursor.fetchone()
+                        if card:
+                            print_as_table(cursor, card)
+                            pause_screen()
+                        else:
+                            print("\nInvalid Card name")
+                            pause_screen()
+        elif category == "2":
+            while True:
+                clear_screen()
+                print("-" * 60)
+                print("             View All card of  a specific type")
+                print("-" * 60)
+
+                while True:
+                    choice = input("Select from: Creature, Trainer, Energy, Element, Rarity (or type 'back')").strip().lower()
+                    if choice == "back":
+                        break
+                    elif choice == "creature":
+                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Creature Card'")
+                        num_cards = cursor.fetchone()[0]
+                        print(f"Total Number of Creature Cards: {num_cards}")
+                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Creature Card'")
+                        cards = cursor.fetchall()
+                        if cards:
+                            print_as_table(cursor, cards)
+                            pause_screen()
+                        else:
+                            print("\nNo Creature Cards found")
+                            pause_screen()
+                    elif choice == "trainer":
+                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Trainer Card'")
+                        num_cards = cursor.fetchone()[0]
+                        print(f"Total Number of Trainer Cards: {num_cards}")
+                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Trainer Card'")
+                        cards = cursor.fetchall()
+                        if cards:
+                            print_as_table(cursor, cards)
+                            pause_screen()
+                        else:
+                            print("\nNo Trainer Cards found")
+                            pause_screen()
+                    elif choice == "energy":
+                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Energy Card'")
+                        num_cards = cursor.fetchone()[0]
+                        print(f"Total Number of Energy Cards: {num_cards}")
+                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Energy Card'")
+                        cards = cursor.fetchall()
+                        if cards:
+                            print_as_table(cursor, cards)
+                            pause_screen()
+                        else:
+                            print("\nNo Energy Cards found")
+                            pause_screen()
+                    elif choice == "element":
+                        element = input("Enter Element:")
+                        cursor.execute("""
+                            SELECT * FROM C
+                        """)
+                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Energy Card'")
+                        num_cards = cursor.fetchone()[0]
+                        print(f"Total Number of Energy Cards: {num_cards}")
+                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Energy Card'")
+                        cards = cursor.fetchall()
+                        if cards:
+                            print_as_table(cursor, cards)
+                            pause_screen()
+                        else:
+                            print("\nNo Energy Cards found")
+                            pause_screen()
+                    
+
+                
+
+                            
+
+
 
 
 def edit_card():
@@ -1821,21 +2094,221 @@ def delete_card():
 
 
 def manage_decks():
-    pass
+    if user_position in ["Administrator", "Moderator"]:
+        clear_screen()
+        print("-" * 75)
+        print("                       Manage Decks")
+        print("-" * 75)
+        print("  [1] View all cards in a Deck")
+        print("  [2] View all decks containing a specific card")
+        print("  [0] Back to Main Menu  ")
+        print("")
+        return input("\nSelect an option: ").strip()
+    elif user_position == "Staff":
+        return
+
+
 
 def view_deck_cards():
-    #search by deck name or id, 
-    #display deck stats (number of cards, cards of each type) 
-    #then a table with all cards in it, ordered by rarity
-    pass
+    while True:
+        clear_screen()
+        print("-" * 60)
+        print("                     View Cards in a Deck")
+        print("-" * 60)
+        category = input("Seach by Deck 'Name' or 'ID' (or type 'back')").strip().lower()
+        
+        if category == "back":
+            break
+        elif category == "id":
+            while True:
+                deck_id = input("Enter Deck ID:")
+                cursor.execute("SELECT * FROM Deck WHERE DeckID = ?", (deck_id,))
+                deck = cursor.fetchone()
+                if deck:
 
+                    cursor.execute("""
+                    SELECT Deck.DeckID, Deck.DeckName, Player.Username, 
+                    SUM(CardInDeck.Quantity) AS 'Total Cards In Deck',
+                    COUNT(CardInDeck.CardID) AS 'Number of Unique Cards', 
+                    SUM(CASE WHEN Card.CardType = 'Creature Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Creature Cards',
+                    SUM(CASE WHEN Card.CardType = 'Trainer Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Trainer Cards',
+                    SUM(CASE WHEN Card.CardType = 'Energy Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Energy Cards'
+                    FROM Deck
+                    JOIN Player ON Player.PlayerID = Deck.PlayerID
+                    JOIN CardInDeck ON CardInDeck.DeckID = Deck.DeckID
+                    JOIN Card ON Card.CardID = CardInDeck.CardID
+                    WHERE Deck.deckid = ?
+                    GROUP BY Deck.DeckID, Deck.DeckName, Player.Username;""", (deck_id,))
+
+                    deck_stats = cursor.fetchone()
+                    print_as_table(cursor, deck_stats)
+
+                    cursor.execute("""
+                    SELECT Card.CardID, CardName, Rarity 
+                    FROM Card 
+                    JOIN CardInDeck ON CardInDeck.CardID = Card.CardID
+                    WHERE CardInDeck.DeckID = ?
+                    ORDER BY CASE 
+                                WHEN UPPER(Card.Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
+                                WHEN UPPER(Card.Rarity) LIKE '%ILLUSTRATION RARE%'   THEN 2
+                                WHEN UPPER(Card.Rarity) LIKE '%HYPER RARE%'          THEN 3
+                                WHEN UPPER(Card.Rarity) LIKE '%ULTRA RARE%'          THEN 4
+                                WHEN UPPER(Card.Rarity) LIKE '%ACE SPEC%'            THEN 5
+                                WHEN UPPER(Card.Rarity) LIKE '%DOUBLE RARE%'         THEN 6
+                                WHEN UPPER(Card.Rarity) LIKE '%RARE HOLO%'           THEN 7
+                                WHEN UPPER(Card.Rarity) LIKE '%RARE%'                THEN 8
+                                WHEN UPPER(Card.Rarity) LIKE '%UNCOMMON%'            THEN 9
+                                WHEN UPPER(Card.Rarity) LIKE '%COMMON%'              THEN 10
+                                ELSE 11
+                            END ASC;""", (deck_id,))
+
+                    cards = cursor.fetchall()
+                    print_as_table(cursor, cards)
+                    pause_screen()
+                    break
+
+                else:
+                    print("\nDeck not found, try again.")
+                    pause_screen()
+                    clear_screen()
+        
+        elif category == "name":
+            while True:
+                deck_name = input("Enter Deck Name:")
+                cursor.execute("SELECT * FROM Deck WHERE DeckName = ?", (deck_name,))
+                deck = cursor.fetchone()
+                if deck:
+
+                    cursor.execute("""
+                    SELECT Deck.DeckID, Deck.DeckName, Player.Username, 
+                    SUM(CardInDeck.Quantity) AS 'Total Cards In Deck',
+                    COUNT(CardInDeck.CardID) AS 'Number of Unique Cards', 
+                    SUM(CASE WHEN Card.CardType = 'Creature Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Creature Cards',
+                    SUM(CASE WHEN Card.CardType = 'Trainer Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Trainer Cards',
+                    SUM(CASE WHEN Card.CardType = 'Energy Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Energy Cards'
+                    FROM Deck
+                    JOIN Player ON Player.PlayerID = Deck.PlayerID
+                    JOIN CardInDeck ON CardInDeck.DeckID = Deck.DeckID
+                    JOIN Card ON Card.CardID = CardInDeck.CardID
+                    WHERE Deck.DeckName = ?
+                    GROUP BY Deck.DeckID, Deck.DeckName, Player.Username;""", (deck_name,))
+
+                    deck_stats = cursor.fetchone()
+                    print_as_table(cursor, deck_stats)
+
+                    cursor.execute("""
+                    SELECT Card.CardID, CardName, Rarity 
+                    FROM Card 
+                    JOIN CardInDeck ON CardInDeck.CardID = Card.CardID
+                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
+                    WHERE Deck.DeckName = ?
+                    ORDER BY CASE 
+                                WHEN UPPER(Card.Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
+                                WHEN UPPER(Card.Rarity) LIKE '%ILLUSTRATION RARE%'   THEN 2
+                                WHEN UPPER(Card.Rarity) LIKE '%HYPER RARE%'          THEN 3
+                                WHEN UPPER(Card.Rarity) LIKE '%ULTRA RARE%'          THEN 4
+                                WHEN UPPER(Card.Rarity) LIKE '%ACE SPEC%'            THEN 5
+                                WHEN UPPER(Card.Rarity) LIKE '%DOUBLE RARE%'         THEN 6
+                                WHEN UPPER(Card.Rarity) LIKE '%RARE HOLO%'           THEN 7
+                                WHEN UPPER(Card.Rarity) LIKE '%RARE%'                THEN 8
+                                WHEN UPPER(Card.Rarity) LIKE '%UNCOMMON%'            THEN 9
+                                WHEN UPPER(Card.Rarity) LIKE '%COMMON%'              THEN 10
+                                ELSE 11
+                            END ASC;""", (deck_name,))
+
+                    cards = cursor.fetchall()
+                    print_as_table(cursor, cards)
+                    pause_screen()
+                    break
+
+                else:
+                    print("\nDeck not found, try again.")
+                    pause_screen()
+                    clear_screen()
+        else:
+            print("Invalid option")
+            pause_screen()
+
+                    
+                    
 def view_all_decks_containing_specific_card():
     #search by cardID
     #display list of deckID, deckName, Quantity containing that card
-    pass
+    while True:
+        clear_screen()
+        print("-" * 60)
+        print("                     View All Decks Containing A Specific Card")
+        print("-" * 60)
+        category = input("Seach for Card by 'Name' or 'ID' (or type 'back')").strip().lower()
+
+        if category == "back":
+            break
+        elif category == "id":
+            while True:
+                card_id = input("Enter Card ID:")
+                cursor.execute("SELECT * FROM Card WHERE CardID = ?", (card_id,))
+                card = cursor.fetchone()
+                if card:
+                    cursor.execute("""
+                    SELECT Deck.DeckID, Deck.DeckName, CardInDeck.Quantity  
+                    FROM CardInDeck
+                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
+                    WHERE CardInDeck.CardID = ?""", (card_id,))
+                    decks = cursor.fetchall()
+                    if decks:
+                        print_as_table(cursor, decks)
+                        pause_screen()
+                    else:
+                        print("\n No decks contain this card")
+                        pause_screen()
+                else:
+                    print("\nCard not found")
+                    pause_screen()
+
+
+        elif category == "name":
+            while True:
+                card_name = input("Enter Card Name:")
+                cursor.execute("SELECT * FROM Card WHERE CardName = ?", (card_name,))
+                card = cursor.fetchone()
+                if card:
+                    cursor.execute("""
+                    SELECT Deck.DeckID, Deck.DeckName, CardInDeck.Quantity  
+                    FROM CardInDeck
+                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
+                    JOIN Card ON CardInDeck.CardID = Card.CardID
+                    WHERE Card.CardName = ?""", (card_name,))
+                    decks = cursor.fetchall()
+                    if decks:
+                        print_as_table(cursor, decks)
+                        pause_screen()
+                    else:
+                        print("\n No decks contain this card")
+                        pause_screen()
+                else:
+                    print("\nCard not found")
+                    pause_screen()
+        else:
+            print("Enter 'id', 'name' or 'Back'")
+            pause_screen()
+
+
 
 def manage_staff():
-    pass
+    if user_position == "Administrator":
+        clear_screen()
+        print("-" * 75)
+        print("                     Manage Staff Members")
+        print("-" * 75)
+        print("  [1] View Staff Details             [4] Delete Staff Member")
+        print("  [2] Edit Staff Details             [0] Back to Main Menu ")
+        print("  [3] Create New Staff Member")
+        print("")
+        return input("\nSelect an option: ").strip()
+    elif user_position in ["Staff", "Moderator"]:
+        return
+
+
 
 def view_staff_details():
     #view all staff details (ordered by role)
