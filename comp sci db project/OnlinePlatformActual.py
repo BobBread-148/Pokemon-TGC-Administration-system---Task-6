@@ -1964,19 +1964,14 @@ def manage_cards():
 
 
 def view_card_details():
-    #search specific card by cardID OR cardName
-    #view list of cards by element/type/rarity AND count total number of cards
-    #view all cards sorted by HP DESC
-    #view all cards with HP higher than a specific value
     while True:
         clear_screen()
-        print("-" * 60)
-        print("                     View Card Details")
-        print("-" * 60)
+        print("-" * 90)
+        print("                             View Card Details")
+        print("-" * 90)
         category = input("""
-[1] View Specific Card Details                     [4] View cards with HP higher than -
-[2] View all cards of a specific element/rarity    [0] Back
-[3] View all cards""")
+[1] View Specific Card Details                                [3] View all cards
+[2] View cards of a specific card type/element type/rarity    [0] Back""")
         
         if category == "0":
             break
@@ -1986,100 +1981,181 @@ def view_card_details():
                 print("-" * 60)
                 print("             View Specific Card Details")
                 print("-" * 60)
-
-                while True:
-                    choice = input("Search by Card 'Name' or 'ID' (or type 'back')").strip().lower()
-                    if choice == "back":
-                        break
-                    elif choice == "id":
-                        card_id = input("Enter Card ID:")
+                choice = input("Search by Card 'Name' or 'ID' (or type 'back'): ").strip().lower()
+                if choice == "back":
+                    break
+                elif choice == "id":
+                    while True:
+                        card_id = input("Enter Card ID: ").strip()
                         cursor.execute("SELECT * FROM Card WHERE CardID = ?", (card_id,))
                         card = cursor.fetchone()
                         if card:
-                            print_as_table(cursor, card)
+                            print_as_table(cursor, [card])  # Wrapped in list for table formatting
                             pause_screen()
+                            break
                         else:
                             print("\nInvalid Card ID")
                             pause_screen()
-                    elif choice == "name":
-                        cardname = input("Enter Card Name:")
-                        cursor.execute("SELECT * FROM Card WHERE CardName = ?", (cardname,))
-                        card = cursor.fetchone()
-                        if card:
-                            print_as_table(cursor, card)
-                            pause_screen()
+                elif choice == "name":
+                    while True:
+                        cardname = input("Enter Card Name: ").strip()
+                        cursor.execute("SELECT * FROM Card WHERE CardName LIKE ?", (f"%{cardname}%",))
+                        cards = cursor.fetchall()
+                        if cards:
+                            print_as_table(cursor, cards)
                         else:
                             print("\nInvalid Card name")
                             pause_screen()
+                    
         elif category == "2":
             while True:
                 clear_screen()
                 print("-" * 60)
-                print("             View All card of  a specific type")
+                print("             View Cards by Category")
                 print("-" * 60)
+                choice = input("Select from: Creature, Trainer, Energy, Type, Rarity (or type 'back'): ").strip().lower()
+                if choice == "back":
+                    break
 
-                while True:
-                    choice = input("Select from: Creature, Trainer, Energy, Element, Rarity (or type 'back')").strip().lower()
-                    if choice == "back":
-                        break
-                    elif choice == "creature":
-                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Creature Card'")
+                elif choice in ["creature", "trainer", "energy"]:
+                    while True:
+                        # Map input string to your stored database CardType strings
+                        type_map = {"creature": "Creature Card", "trainer": "Trainer Card", "energy": "Energy Card"}
+                        target_type = type_map[choice]
+                        
+                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = ?", (target_type,))
                         num_cards = cursor.fetchone()[0]
-                        print(f"Total Number of Creature Cards: {num_cards}")
-                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Creature Card'")
+                        print(f"\nTotal Number of {target_type}s: {num_cards}")
+                        
+                        cursor.execute("SELECT * FROM Card WHERE CardType = ?", (target_type,))
                         cards = cursor.fetchall()
                         if cards:
                             print_as_table(cursor, cards)
                             pause_screen()
+                            break
                         else:
-                            print("\nNo Creature Cards found")
+                            print(f"\nNo {target_type}s found")
                             pause_screen()
-                    elif choice == "trainer":
-                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Trainer Card'")
-                        num_cards = cursor.fetchone()[0]
-                        print(f"Total Number of Trainer Cards: {num_cards}")
-                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Trainer Card'")
-                        cards = cursor.fetchall()
-                        if cards:
-                            print_as_table(cursor, cards)
-                            pause_screen()
-                        else:
-                            print("\nNo Trainer Cards found")
-                            pause_screen()
-                    elif choice == "energy":
-                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Energy Card'")
-                        num_cards = cursor.fetchone()[0]
-                        print(f"Total Number of Energy Cards: {num_cards}")
-                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Energy Card'")
-                        cards = cursor.fetchall()
-                        if cards:
-                            print_as_table(cursor, cards)
-                            pause_screen()
-                        else:
-                            print("\nNo Energy Cards found")
-                            pause_screen()
-                    elif choice == "element":
-                        element = input("Enter Element:")
+
+                elif choice == "type":
+                    while True:
+                        element_type = input("Enter Type (e.g., Fire, Water, Lightning): ").strip()
                         cursor.execute("""
-                            SELECT * FROM C
-                        """)
-                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = 'Energy Card'")
-                        num_cards = cursor.fetchone()[0]
-                        print(f"Total Number of Energy Cards: {num_cards}")
-                        cursor.execute("SELECT * FROM Card WHERE CardType = 'Energy Card'")
+                        SELECT Card.* 
+                        FROM Card
+                        LEFT JOIN CreatureCard ON CreatureCard.CardID = Card.CardID
+                        LEFT JOIN EnergyCard ON EnergyCard.CardID = Card.CardID
+                        WHERE CreatureCard.ElementType = ? OR EnergyCard.ElementType = ?
+                        """, (element_type, element_type))
                         cards = cursor.fetchall()
+                        print(f"\nTotal Cards of Element '{element_type}': {len(cards)}")
                         if cards:
                             print_as_table(cursor, cards)
                             pause_screen()
+                            break
                         else:
-                            print("\nNo Energy Cards found")
+                            print("\nNo Cards of this Element found")
                             pause_screen()
-                    
 
-                
+                elif choice == "rarity":
+                    while True:
+                        rarity = input("Enter Rarity (e.g., Common, Rare, Ultra Rare): ").strip()
+                        cursor.execute("SELECT * FROM Card WHERE Rarity LIKE ?", (f"%{rarity}%",))
+                        cards = cursor.fetchall()
+                        print(f"\nTotal Cards of Rarity '{rarity}': {len(cards)}")
+                        if cards:
+                            print_as_table(cursor, cards)
+                            pause_screen()
+                            break
+                        else:
+                            print("\nNo Cards of this Rarity found")
+                            pause_screen()  
 
-                            
+                else:
+                    print("Invalid option")
+                    pause_screen()
 
+        elif category == "3":
+            while True:
+                clear_screen()
+                print("-" * 60)
+                print("             View All Cards")
+                print("-" * 60)
+                choice = input("Order by id, name, card number or rarity? (or type 'back'): ").strip().lower()
+                if choice == "back":
+                    break
+                elif choice == "name":
+                    cursor.execute("""
+                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
+                    FROM Card
+                    JOIN CardSet ON Card.SetId = CardSet.SetID
+                    ORDER BY CardName ASC""")
+                    cards = cursor.fetchall()
+                    if cards:
+                        print_as_table(cursor, cards)
+                        pause_screen()
+                    else:
+                        print("No Card Found (gasp)")
+                        pause_screen()
+                elif choice == "id":
+                    cursor.execute("""
+                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
+                    FROM Card
+                    JOIN CardSet ON Card.SetId = CardSet.SetID
+                    ORDER BY CardID ASC""")
+                    cards = cursor.fetchall()
+                    if cards:
+                        print_as_table(cursor, cards)
+                        pause_screen()
+                    else:
+                        print("No Card Found (gasp)")
+                        pause_screen()
+                elif choice == "card number":
+                    cursor.execute("""
+                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
+                    FROM Card
+                    JOIN CardSet ON Card.SetId = CardSet.SetID
+                    ORDER BY CardNUmber ASC""")
+                    cards = cursor.fetchall()
+                    if cards:
+                        print_as_table(cursor, cards)
+                        pause_screen()
+                    else:
+                        print("No Card Found (gasp)")
+                        pause_screen()
+                elif choice == "rarity":
+                    cursor.execute("""
+                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
+                    FROM Card
+                    JOIN CardSet ON Card.SEtId = CardSet.SetID
+                    ORDER BY
+                        CASE Card.Rarity
+                            WHEN 'Special Illustration Rare' THEN 1
+                            WHEN 'Illustration Rare'         THEN 2
+                            WHEN 'Hyper Rare'                THEN 3
+                            WHEN 'Ultra Rare'                THEN 4
+                            WHEN 'Ace Spec'                  THEN 5
+                            WHEN 'Double Rare'               THEN 6
+                            WHEN 'Rare Holo'                 THEN 7
+                            WHEN 'Rare'                      THEN 8
+                            WHEN 'Uncommon'                  THEN 9
+                            WHEN 'Common'                    THEN 10
+                            ELSE 11
+                        END ASC""")
+                    cards = cursor.fetchall()
+                    if cards:
+                        print_as_table(cursor, cards)
+                        pause_screen()
+                    else:
+                        print("No Card Found (gasp)")
+                        pause_screen()
+                else:
+                    print("Invalid option")
+                    pause_screen()
+
+        else:
+            print("invalid option")
+            pause_screen
 
 
 
@@ -2400,7 +2476,7 @@ def main():
                     else: 
                         print("Invalid option selected.")
                         pause_screen()
-            elif menu_option == "4":
+            elif menu_option == "4" and user_position in ['Moderator', 'Administrator']:
                 while True:
                     manage_cards_option = manage_cards()
                     if manage_cards_option == "0":
@@ -2416,7 +2492,7 @@ def main():
                     else: 
                         print("Invalid option selected.")
                         pause_screen()
-            elif menu_option == "5":
+            elif menu_option == "5" and user_position in ['Moderator', 'Administrator']:
                 while True:
                     manage_decks_option = manage_decks()
                     if manage_decks_option == "0":
@@ -2428,7 +2504,7 @@ def main():
                     else: 
                         print("Invalid option selected.")
                         pause_screen()
-            elif menu_option == "6":
+            elif menu_option == "6" and user_position == 'Administrator':
                 while True:
                     manage_staff_option = manage_staff()
                     if manage_staff_option == "0":
@@ -2444,7 +2520,7 @@ def main():
                     else:
                         print("Invalid option selected.")
                         pause_screen()
-            elif menu_option == "7":
+            elif menu_option == "7" and user_position == 'Administrator':
                 generate_analytical_reports()
             else:
                 print("Invalid option selected, please try again.")
