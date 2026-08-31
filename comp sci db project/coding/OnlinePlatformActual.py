@@ -15,6 +15,7 @@ cursor = conn.cursor()
 cursor.execute("PRAGMA foreign_keys = ON;")
 
 
+
 def clear_screen():
     if os.name == 'nt':
         os.system('cls')
@@ -217,7 +218,6 @@ def view_account_details():
                 else:
                     print("No player found with that email. Please try again.")
                     pause_screen()
-
         else:
             continue
         clear_screen()
@@ -225,8 +225,8 @@ def view_account_details():
 
 
 def edit_account_details():
-    clear_screen()
     while True:
+        clear_screen()
         print("-" * 60)
         print("                  Edit Account Details")
         print("-" * 60)
@@ -313,7 +313,7 @@ def edit_account_details_checks(player, cursor):
             new_number = player[4]
             break
         cleaned_number = new_number.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
-        if 3 <= len(new_number) <= 17 and cleaned_number.isdigit():
+        if 3 <= len(cleaned_number) <= 17 and cleaned_number.isdigit():
             break
         else:
             print("\nPlease enter a valid phone number")
@@ -335,20 +335,11 @@ def edit_account_details_checks(player, cursor):
     
     db_number = new_number
 
-    cursor.execute(
-        """
+    cursor.execute("""
         UPDATE Player 
         SET Username = ?, DateOfBirth = ?, PhoneNumber = ?, Email = ? 
         WHERE PlayerID = ?
-        """, 
-        (
-            new_username, 
-            new_dob, 
-            db_number, 
-            new_email,  
-            playerid
-        )
-    )
+        """,(new_username, new_dob, db_number, new_email, playerid))
     conn.commit()
     print("Player details updated successfully.")
     pause_screen()
@@ -356,8 +347,8 @@ def edit_account_details_checks(player, cursor):
 
 
 def view_player_stats():
-    clear_screen()
     while True:
+        clear_screen()
         print("-" * 60)
         print("                  View Player Stats")
         print("-" * 60)
@@ -386,7 +377,7 @@ def view_player_stats():
                 username = input("Enter Player Username (or type 'back'): ").strip()
                 if username.lower() == "back":
                     break
-                
+
                 cursor.execute("SELECT * FROM Player WHERE Username = ?", (username,))
                 player = cursor.fetchone()
                 if player:
@@ -395,7 +386,6 @@ def view_player_stats():
                 else:
                     print("No player found with that username. Please try again.")
                     pause_screen()
-
         else:
             continue
         clear_screen()
@@ -500,63 +490,62 @@ def add_new_player():
     print(f"Registration Date  : {date_joined}\n")
 
     while True:
-        username = input("Enter Username: ")
-
+        username = input("(type 'back' at any time to cancel\nEnter Username: ").strip()
         if username == "":
             print("Enter a valid username:")
             continue
+        elif username.lower() == 'back':
+            break
 
         cursor.execute("SELECT Username FROM Player WHERE Username = ?", (username,))
         not_unique = cursor.fetchone()
-
         if not_unique:
             print("This username already exists")
         else:
             break
 
     while True:
-        dob = input("Update Date of Birth (YYYY-MM-DD): ").strip()
-
+        dob = input("Enter Date of Birth (YYYY-MM-DD): ").strip()
         if dob == "":
             print("Enter a valid date of birth:")
             continue
+        elif dob == "back":
+            break
 
         try:
             dob = datetime.strptime(dob, "%Y-%m-%d").date()
-
             if dob > date.today():
                 print("Date of birth cannot be in the future.")
             else:
                 break
-
         except ValueError:
             print("Invalid date. Please enter the date in YYYY-MM-DD format.")
             
     while True:
-        number = input("Update Phone Number: ").strip()
-
+        number = input("Enter Phone Number: ").strip()
         if number == "":
             number = None
             break
+        elif number == "back":
+            break
 
         cleaned_number = number.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
-
         if 3 <= len(cleaned_number) <= 17 and cleaned_number.isdigit():
             break
         else:
             print("\nPlease enter a valid phone number:")
 
     while True:
-        email = input("Update Email: ").strip()
-
+        email = input("Enter Email: ").strip()
         if email == "":
             print("\nPlease enter a valid email:")
             continue
+        elif email == "back":
+            break
 
         if "@" in email and "." in email:
             at_position = email.index("@")
             dot_position = email.rindex(".")
-
             if at_position > 0 and dot_position > at_position + 1 and dot_position < len(email) - 1:
                 break
             else:
@@ -565,14 +554,10 @@ def add_new_player():
             print("E\nPlease enter a valid email")
 
     db_number = number
-
-    cursor.execute(
-        """
+    cursor.execute("""
         INSERT INTO Player (PlayerID, Username, DateOfBirth, PhoneNumber, Email, DateJoined) 
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, 
-        (player_id, username, dob, db_number, email, date_joined)
-    )
+        VALUES (?, ?, ?, ?, ?, ?)""", 
+        (player_id, username, dob, db_number, email, date_joined))
     conn.commit()
     print(f"\nNew player '{username}' added successfully.")
     pause_screen()
@@ -580,7 +565,6 @@ def add_new_player():
 
 
 def delete_player():
-    
     while True:
         clear_screen()
         print("-" * 60)
@@ -623,7 +607,7 @@ def delete_player():
                             WHERE SenderID = ? OR ReceiverID = ?)
                         """, (player[0], player[0]))
                         cursor.execute("DELETE FROM Trade WHERE SenderID = ? OR ReceiverID = ?", (player[0], player[0]))
-                        cursor.execute("DELETE FROM PlayerWHERE PlayerID = ?", (player[0],))
+                        cursor.execute("DELETE FROM Player WHERE PlayerID = ?", (player[0],))
 
                         conn.commit()
 
@@ -676,7 +660,7 @@ def delete_player():
                             WHERE SenderID = ? OR ReceiverID = ?)
                         """, (player[0], player[0]))
                         cursor.execute("DELETE FROM Trade WHERE SenderID = ? OR ReceiverID = ?", (player[0], player[0]))
-                        cursor.execute("DELETE FROM PlayerWHERE PlayerID = ?", (player[0],))
+                        cursor.execute("DELETE FROM Player WHERE PlayerID = ?", (player[0],))
 
                         conn.commit()
 
@@ -705,9 +689,10 @@ def manage_tournaments():
         print("-" * 75)
         print("                           Manage Tournaments")
         print("-" * 75)
-        print("  [1] View Tournament Details                 [4] Create New Tournament")
-        print("  [2] Edit Tournament Details                 [5] Delete Tournament")
-        print("  [3] Register/Remove player from Tournament  [0] Back to Main Menu")
+        print("  [1] View Tournament Details                 [5] Create New Tournament")
+        print("  [2] Register/Remove player from Tournament  [6] Delete Tournament")
+        print("  [3] View Venues                             [0] Back to Main Menu")
+        print("  [4] Edit Tournament Details")
         print("")
         return input("\nSelect an option: ").strip()
     elif user_position == "Staff":
@@ -717,6 +702,7 @@ def manage_tournaments():
         print("-" * 50)
         print("  [1] View Tournament Details")
         print("  [2] Register/Remove player from Tournament")
+        print("  [3] View Venues")
         print("  [0] Back to Main Menu")
         print("")
         return input("\nSelect an option: ").strip()
@@ -724,8 +710,8 @@ def manage_tournaments():
 
 
 def view_tournament_details():
-    clear_screen()
     while True:
+        clear_screen()
         print("-" * 60)
         print("                     View Tournament Details")
         print("-" * 60)
@@ -798,19 +784,27 @@ def view_tournament_details():
                             print("No tournament found with that name. Please try again.")
                             pause_screen()
                 else:
-                    print("Invalid search option. Please enter 'id', 'name', or 'back'.")
-                    pause_screen()
+                    continue
         else:
-            print("Invalid option. Please select a valid category.")
-            pause_screen()
+            continue
         clear_screen()
 
 
 
-def edit_tournament_details():
-    clear_screen()
-
+def view_venues():
     while True:
+        clear_screen()
+        cursor.execute("SELECT * FROM Venue")
+        venues = cursor.fetchall()
+        print_as_table(cursor, venues)
+        choice = input("Click enter to go back")
+        if choice == "":
+            break
+
+
+def edit_tournament_details():
+    while True:
+        clear_screen()
         print("-" * 60)
         print("                  Edit Tournament Details")
         print("-" * 60)
@@ -828,7 +822,8 @@ def edit_tournament_details():
                 tournament = cursor.fetchone()
 
                 if tournament:
-                    edit_tournament_details_checks(tournament, cursor)
+                    # Pass conn along with tournament and cursor
+                    edit_tournament_details_checks(tournament, cursor, conn)
                     break
                 else:
                     print("No Tournament found with that ID. Please try again.")
@@ -843,23 +838,23 @@ def edit_tournament_details():
                 tournament = cursor.fetchone()
 
                 if tournament:
-                    edit_tournament_details_checks(tournament, cursor)
+                    # Pass conn along with tournament and cursor
+                    edit_tournament_details_checks(tournament, cursor, conn)
                     break
                 else:
                     print("No Tournament found with that name. Please try again.")
                     pause_screen()
         else:
-            print("Invalid search option. Please enter 'ID' or 'Name'.")
-            pause_screen()
+            continue
         clear_screen()
 
 
-
-def edit_tournament_details_checks(tournament, cursor):
+def edit_tournament_details_checks(tournament, cursor, conn): 
     print_as_table(cursor, tournament)
     tournamentid = tournament[0]
     print("Please enter the tournament data you wish to change. If you do not wish to change anything in the specific column, just click enter.")
 
+    #Update Tournament Name
     while True:
         new_tournamentname = input("Update tournament name: ").strip()
         if new_tournamentname == "":
@@ -871,6 +866,7 @@ def edit_tournament_details_checks(tournament, cursor):
         else:
             break
 
+    #Update Start Date
     while True:
         new_date = input("Update start date (YYYY-MM-DD): ").strip()
         if new_date == "":
@@ -882,23 +878,36 @@ def edit_tournament_details_checks(tournament, cursor):
         except ValueError:
             print("Invalid date. Please enter the date in YYYY-MM-DD format.")
 
+    #Update Venue ID
+    print("\n--- Available Venues ---")
+    cursor.execute("SELECT VenueID, VenueName, VenueCity, VenueCountry FROM Venue")
+    venues = cursor.fetchall()
+    for v in venues:
+        print(f"ID: {v[0]} | {v[1]} ({v[2]}, {v[3]})")
+    print("------------------------\n")
+
     while True:
-        new_location = input("Update tournament location (city, country): ").strip()
-        if new_location == "":
-            new_location = tournament[3]
+        new_venue_id = input("Update tournament Venue ID: ").strip()
+        if new_venue_id == "":
+            new_venue_id = tournament[3] 
             break
 
-        if "," not in new_location:
-            print("Invalid location. Please enter it in the format city, country.")
+        #Check if the input is a valid number
+        if not new_venue_id.isdigit():
+            print("Invalid input. Please enter a numerical Venue ID.")
             continue
 
-        city, country = new_location.split(",", 1)
-        if city.strip() == "" or country.strip() == "":
-            print("Invalid location. Please enter it in the format city, country.")
+        new_venue_id = int(new_venue_id)
+
+        #Check if the Venue ID actually exists 
+        cursor.execute("SELECT VenueID FROM Venue WHERE VenueID = ?", (new_venue_id,))
+        if cursor.fetchone() is None:
+            print(f"Error: Venue ID {new_venue_id} does not exist. Please choose a valid ID.")
             continue
-        new_location = f"{city.strip()}, {country.strip()}"
+        
         break
 
+    #Update Status
     while True:
         new_status = input("Update status (Upcoming, Ongoing, Finished): ").strip()
         if new_status == "":
@@ -909,22 +918,14 @@ def edit_tournament_details_checks(tournament, cursor):
             break
         print("Invalid status. Please enter Upcoming, Ongoing, or Finished.")
 
-    cursor.execute(
-        """
+    #Execute Update Statement
+    cursor.execute("""
         UPDATE Tournament
-        SET TournamentName = ?, EventDate = ?, Location = ?, EventStatus = ?
-        WHERE TournamentID = ?
-        """,
-        (
-            new_tournamentname,
-            new_date,
-            new_location,
-            new_status,
-            tournamentid
-        ))
+        SET TournamentName = ?, EventDate = ?, VenueID = ?, EventStatus = ?
+        WHERE TournamentID = ?""",
+        (new_tournamentname, new_date, new_venue_id, new_status, tournamentid))
 
     conn.commit()
-
     print("Tournament details updated successfully.")
     pause_screen()
 
@@ -940,7 +941,6 @@ def register_remove_players():
 
         if choice == "back":
             break
-
         elif choice == "1":
             clear_screen()
             print("-" * 60)
@@ -948,63 +948,38 @@ def register_remove_players():
             print("-" * 60)
 
             tournament_id = input("Enter Tournament ID: ").strip().upper()
-
             if tournament_id == "":
                 print("\nEnter a valid Tournament ID.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                "SELECT 1 FROM Tournament WHERE TournamentID = ?",
-                (tournament_id,)
-            )
-
+            cursor.execute("SELECT 1 FROM Tournament WHERE TournamentID = ?",(tournament_id,))
             if not cursor.fetchone():
                 print("\nError: Tournament ID does not exist.")
                 pause_screen()
                 continue
 
             player_id = input("Enter Player ID: ").strip().upper()
-
             if player_id == "":
                 print("\nEnter a valid Player ID.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                "SELECT 1 FROM Player WHERE PlayerID = ?",
-                (player_id,)
-            )
-
+            cursor.execute("SELECT 1 FROM Player WHERE PlayerID = ?",(player_id,))
             if not cursor.fetchone():
                 print("\nError: Player ID does not exist.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                """
-                SELECT 1
-                FROM RegistrationList
-                WHERE TournamentID = ? AND PlayerID = ?
-                """,
-                (tournament_id, player_id)
-            )
-
+            cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
             if cursor.fetchone():
                 print("\nError: This player is already registered for this tournament.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                """
-                INSERT INTO RegistrationList (TournamentID, PlayerID)
-                VALUES (?, ?)
-                """,
-                (tournament_id, player_id)
-            )
+            cursor.execute("INSERT INTO RegistrationList (TournamentID, PlayerID) VALUES (?, ?)",(tournament_id, player_id))
 
             conn.commit()
-
             print("\nPlayer successfully added.")
             pause_screen()
 
@@ -1015,65 +990,38 @@ def register_remove_players():
             print("-" * 60)
 
             tournament_id = input("Enter Tournament ID: ").strip().upper()
-
             if tournament_id == "":
                 print("\nEnter a valid Tournament ID.")
                 pause_screen()
                 continue
 
             player_id = input("Enter Player ID: ").strip().upper()
-
             if player_id == "":
                 print("\nEnter a valid Player ID.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                """
-                SELECT 1
-                FROM RegistrationList
-                WHERE TournamentID = ? AND PlayerID = ?
-                """,
-                (tournament_id, player_id)
-            )
-
+            cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
             if not cursor.fetchone():
                 print("\nError: No such registration found.")
                 pause_screen()
                 continue
 
             # Check whether the player is already involved in a match
-            cursor.execute(
-                """
-                SELECT 1
-                FROM Matches
-                WHERE TournamentID = ?
-                AND (Player1 = ? OR Player2 = ?)
-                """,
-                (tournament_id, player_id, player_id)
-            )
-
+            cursor.execute("SELECT 1 FROM Matches WHERE TournamentID = ? AND (Player1 = ? OR Player2 = ?)",(tournament_id, player_id, player_id))
             if cursor.fetchone():
                 print("\nError: This player is involved in a match and cannot be removed.")
                 pause_screen()
                 continue
 
-            cursor.execute(
-                """
-                DELETE FROM RegistrationList
-                WHERE TournamentID = ? AND PlayerID = ?
-                """,
-                (tournament_id, player_id)
-            )
+            cursor.execute("DELETE FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
 
             conn.commit()
-
             print("\nPlayer successfully removed from tournament.")
             pause_screen()
 
         else:
-            print("\nInvalid choice. Please enter 1, 2, or 'back'.")
-            pause_screen()
+            continue
 
 
 
@@ -1097,7 +1045,7 @@ def create_new_tournament():
     
         print(f"Generated Tournament ID: {tournament_id}")
     
-        # Tournament name
+        #Tournament name
         while True:
             name = input("Enter Tournament Name (or 'back' to go back): ").strip()
 
@@ -1111,7 +1059,7 @@ def create_new_tournament():
             else:
                 break
 
-        # Event date
+        #Event date
         while True:
             eventdate = input("Enter Event Date (YYYY-MM-DD): ").strip()
 
@@ -1126,49 +1074,53 @@ def create_new_tournament():
             except ValueError:
                 print("Invalid date. Please enter the date in YYYY-MM-DD format.")
 
-        # Location
-        while True:
-            location = input("Enter Event Location (city, country): ").strip()
+        #Venue ID Selection and Verification
+        print("\n--- Available Venues ---")
+        cursor.execute("SELECT VenueID, VenueName, VenueCity, VenueCountry FROM Venue")
+        venues = cursor.fetchall()
+        for v in venues:
+            print(f"ID: {v[0]} | {v[1]} ({v[2]}, {v[3]})")
+        print("------------------------\n")
 
-            if "," not in location:
-                print("Please enter the location in the format: city, country")
+        while True:
+            venue_input = input("Enter Venue ID: ").strip()
+
+            if venue_input == "":
+                print("Venue ID cannot be empty.")
                 continue
 
-            city, country = location.split(",", 1)
+            if not venue_input.isdigit():
+                print("Invalid input. Please enter a numerical Venue ID.")
+                continue
 
-            if city.strip() == "" or country.strip() == "":
-                print("Please enter both a city and country.")
-            elif len(location) > 30:
-                print("Location must be 30 characters or fewer.")
-            else:
-                break
+            venue_id = int(venue_input)
 
-        # Determine event status
+            #Check if the Venue ID actually exists in the Venue table
+            cursor.execute("SELECT VenueID FROM Venue WHERE VenueID = ?", (venue_id,))
+            if cursor.fetchone() is None:
+                print(f"Error: Venue ID {venue_id} does not exist. Please choose a valid ID.")
+                continue
+
+            break
+
+        #Determine event status
         if eventdate == date.today():
             eventstatus = "Ongoing"
         else:
             eventstatus = "Upcoming"
 
-        cursor.execute(
-            """
+        #Database Insert Query 
+        cursor.execute("""
             INSERT INTO Tournament 
-            (TournamentID, TournamentName, EventDate, Location, EventStatus) 
+            (TournamentID, TournamentName, EventDate, VenueID, EventStatus) 
             VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                tournament_id,
-                name,
-                eventdate,
-                location,
-                eventstatus
-            )
-        )
+            """,(tournament_id, name, eventdate, venue_id, eventstatus))
 
         conn.commit()
-
         print(f"\nNew Tournament '{name}' added successfully.")
         pause_screen()
         break
+
 
 
 
@@ -1199,7 +1151,7 @@ def cancel_tournament():
                 if tournament:
                     print_as_table(cursor, tournament)
 
-                    # Don't allow finished tournaments to be cancelled
+                    #Don't allow finished tournaments to be cancelled
                     if tournament[4] == "Finished":
                         print("Finished tournaments cannot be cancelled.")
                         pause_screen()
@@ -1212,36 +1164,14 @@ def cancel_tournament():
 
                     if confirm == "yes":
 
-                        # Delete matches for this tournament
-                        cursor.execute(
-                            "DELETE FROM Matches WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament registrations
-                        cursor.execute(
-                            "DELETE FROM RegistrationList WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament staff
-                        cursor.execute(
-                            "DELETE FROM TournamentStaff WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament
-                        cursor.execute(
-                            "DELETE FROM Tournament WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
+                        #Delete other fields to prevent foreign key integrity errors
+                        cursor.execute("DELETE FROM Matches WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM RegistrationList WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM TournamentStaff WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM Tournament WHERE TournamentID = ?",(tournament[0],))
                         conn.commit()
 
-                        print(
-                            f"Tournament '{tournament[1]}' "
-                            f"cancelled successfully."
-                        )
+                        print(f"Tournament '{tournament[1]}' " f"cancelled successfully.")
                         pause_screen()
                         break
 
@@ -1249,33 +1179,25 @@ def cancel_tournament():
                         print("Cancellation cancelled.")
                         pause_screen()
                         break
-
                     else:
                         print("Please enter 'yes' or 'no'.")
-
                 else:
                     print("No tournament found with that ID. Please try again.")
                     pause_screen()
 
         elif search == "name":
             while True:
-                name = input(
-                    "Enter Tournament name (or type 'back'): "
-                ).strip()
+                name = input("Enter Tournament name (or type 'back'): ").strip()
 
                 if name.lower() == "back":
                     break
-
-                cursor.execute(
-                    "SELECT * FROM Tournament WHERE TournamentName = ?",
-                    (name,)
-                )
+                cursor.execute("SELECT * FROM Tournament WHERE TournamentName = ?",name,))
                 tournament = cursor.fetchone()
 
                 if tournament:
                     print_as_table(cursor, tournament)
 
-                    # Don't allow finished tournaments to be cancelled
+                    #Don't allow finished tournaments to be cancelled
                     if tournament[4] == "Finished":
                         print("Finished tournaments cannot be cancelled.")
                         pause_screen()
@@ -1288,36 +1210,14 @@ def cancel_tournament():
 
                     if confirm == "yes":
 
-                        # Delete matches for this tournament
-                        cursor.execute(
-                            "DELETE FROM Matches WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament registrations
-                        cursor.execute(
-                            "DELETE FROM RegistrationList WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament staff
-                        cursor.execute(
-                            "DELETE FROM TournamentStaff WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
-                        # Delete tournament
-                        cursor.execute(
-                            "DELETE FROM Tournament WHERE TournamentID = ?",
-                            (tournament[0],)
-                        )
-
+                        #Delete other fields to prevent foreign key integrity errors
+                        cursor.execute("DELETE FROM Matches WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM RegistrationList WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM TournamentStaff WHERE TournamentID = ?",(tournament[0],))
+                        cursor.execute("DELETE FROM Tournament WHERE TournamentID = ?",(tournament[0],))
                         conn.commit()
 
-                        print(
-                            f"Tournament '{tournament[1]}' "
-                            f"cancelled successfully."
-                        )
+                        print(f"Tournament '{tournament[1]}' "f"cancelled successfully.")
                         pause_screen()
                         break
 
@@ -1325,14 +1225,11 @@ def cancel_tournament():
                         print("Cancellation cancelled.")
                         pause_screen()
                         break
-
                     else:
                         print("Please enter 'yes' or 'no'.")
-
                 else:
                     print("No tournament found with that name. Please try again.")
                     pause_screen()
-
         else:
             print("Invalid search option. Please enter 'ID' or 'Name'.")
             pause_screen()
@@ -1352,6 +1249,7 @@ def manage_matches():
         print("  [3] Create match  ")
         print("")
         return input("\nSelect an option: ").strip()
+
     elif user_position == "Staff":
         clear_screen()
         print("-" * 50)
@@ -1371,13 +1269,16 @@ def view_match_details():
         print("-" * 60)
         print("                     View Match Details")
         print("-" * 60)
+
         category = input("""
 [1] View All Matches in a Tournament        [3] View a Player's Matches
 [2] View Specific Match Details             [0] Back
-""")
+""").strip()
+
         if category == "0":
             break
 
+        #View all matches in a tournament
         elif category == "1":
             clear_screen()
             print("-" * 60)
@@ -1386,70 +1287,106 @@ def view_match_details():
 
             tournament_id = input("Enter Tournament ID: ").strip()
 
+            #Check that the tournament exists first
+            cursor.execute(
+                "SELECT TournamentID FROM Tournament WHERE TournamentID = ?",
+                (tournament_id,)
+            )
+
+            tournament_exists = cursor.fetchone()
+
+            if not tournament_exists:
+                print("\nNo tournament found with that ID.")
+                pause_screen()
+                continue
+
             cursor.execute("""
-            SELECT 
-                Matches.MatchesID,
-                Player1.PlayerID || ' - ' || Player1.Username AS Player1,
-                Player2.PlayerID || ' - ' || Player2.Username AS Player2,
-                WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
-                Matches.MatchStatus,
-                Matches.Round
-            FROM Matches
-            JOIN Player AS Player1 ON Matches.Player1 = Player1.PlayerID
-            JOIN Player AS Player2 ON Matches.Player2 = Player2.PlayerID
-            LEFT JOIN Player AS WinnerPlayer ON Matches.Winner = WinnerPlayer.PlayerID
-            WHERE Matches.TournamentID = ?""", (tournament_id,))
+                SELECT 
+                    Matches.MatchesID,
+                    Player1.PlayerID || ' - ' || Player1.Username AS Player1,
+                    Player2.PlayerID || ' - ' || Player2.Username AS Player2,
+                    WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
+                    Matches.MatchStatus,
+                    Matches.Round
+                FROM Matches
+                JOIN Player AS Player1
+                    ON Matches.Player1 = Player1.PlayerID
+                JOIN Player AS Player2
+                    ON Matches.Player2 = Player2.PlayerID
+                LEFT JOIN Player AS WinnerPlayer
+                    ON Matches.Winner = WinnerPlayer.PlayerID
+                WHERE Matches.TournamentID = ?
+            """, (tournament_id,))
 
             matches = cursor.fetchall()
+
             if matches:
-                cursor.execute("SELECT COUNT(MatchesID) FROM Matches WHERE TournamentID =?", (tournament_id,))
+                cursor.execute(
+                    "SELECT COUNT(MatchesID) FROM Matches WHERE TournamentID = ?",
+                    (tournament_id,)
+                )
+
                 num_matches = cursor.fetchone()
-                print(f"Total number of matches: {num_matches}")
+
+                print(f"Total number of matches: {num_matches[0]}")
                 print_as_table(cursor, matches)
                 pause_screen()
+
             else:
-                print("\nNo matches found for that ID, did you enter the ID correctly?")
+                print("\nNo matches found for that tournament.")
                 pause_screen()
 
+        # View specific match details
         elif category == "2":
             clear_screen()
             print("-" * 60)
-            print("             View specific Matches details")
+            print("             View specific Match details")
             print("-" * 60)
 
-            matches_id = input("Enter Match ID: ").strip()
+            matches_id = input("Enter Match ID: ").strip().upper()
 
             cursor.execute("""
-            SELECT 
-                Matches.MatchesID,
-                Player1.PlayerID || ' - ' || Player1.Username AS Player1,
-                Player2.PlayerID || ' - ' || Player2.Username AS Player2,
-                WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
-                Matches.MatchStatus,
-                Matches.Round
-            FROM Matches
-            JOIN Player AS Player1 ON Matches.Player1 = Player1.PlayerID
-            JOIN Player AS Player2 ON Matches.Player2 = Player2.PlayerID
-            LEFT JOIN Player AS WinnerPlayer ON Matches.Winner = WinnerPlayer.PlayerID
-            WHERE Matches.MatchesID = ?""", (matches_id,))
+                SELECT 
+                    Matches.MatchesID,
+                    Player1.PlayerID || ' - ' || Player1.Username AS Player1,
+                    Player2.PlayerID || ' - ' || Player2.Username AS Player2,
+                    WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
+                    Matches.MatchStatus,
+                    Matches.Round
+                FROM Matches
+                JOIN Player AS Player1
+                    ON Matches.Player1 = Player1.PlayerID
+                JOIN Player AS Player2
+                    ON Matches.Player2 = Player2.PlayerID
+                LEFT JOIN Player AS WinnerPlayer
+                    ON Matches.Winner = WinnerPlayer.PlayerID
+                WHERE Matches.MatchesID = ?
+            """, (matches_id,))
 
             matches = cursor.fetchone()
+
             if matches:
                 print_as_table(cursor, matches)
                 pause_screen()
+
             else:
-                print("\nNo Match found with that ID")
+                print("\nNo Match found with that ID.")
                 pause_screen()
 
+        # View a player's matches
         elif category == "3":
             clear_screen()
             print("-" * 60)
             print("         View Matches details of a Player")
             print("-" * 60)
 
-            player_id = input("Enter Player ID: ").strip()
+            player_id = input("Enter Player ID: ").strip().upper()
 
-            cursor.execute("SELECT 1 FROM Player WHERE PlayerID = ?", (player_id,))
+            cursor.execute(
+                "SELECT 1 FROM Player WHERE PlayerID = ?",
+                (player_id,)
+            )
+
             player_exists = cursor.fetchone()
 
             if not player_exists:
@@ -1458,280 +1395,478 @@ def view_match_details():
                 continue
 
             cursor.execute("""
-            SELECT 
-                Matches.MatchesID,
-                Player1.PlayerID || ' - ' || Player1.Username AS Player1,
-                Player2.PlayerID || ' - ' || Player2.Username AS Player2,
-                WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
-                Matches.MatchStatus,
-                Matches.Round
-            FROM Matches
-            JOIN Player AS Player1 ON Matches.Player1 = Player1.PlayerID
-            JOIN Player AS Player2 ON Matches.Player2 = Player2.PlayerID
-            LEFT JOIN Player AS WinnerPlayer ON Matches.Winner = WinnerPlayer.PlayerID
-            WHERE Matches.Player1 = ? OR Matches.Player2 = ?""", (player_id, player_id))
+                SELECT 
+                    Matches.MatchesID,
+                    Player1.PlayerID || ' - ' || Player1.Username AS Player1,
+                    Player2.PlayerID || ' - ' || Player2.Username AS Player2,
+                    WinnerPlayer.PlayerID || ' - ' || WinnerPlayer.Username AS Winner,
+                    Matches.MatchStatus,
+                    Matches.Round
+                FROM Matches
+                JOIN Player AS Player1
+                    ON Matches.Player1 = Player1.PlayerID
+                JOIN Player AS Player2
+                    ON Matches.Player2 = Player2.PlayerID
+                LEFT JOIN Player AS WinnerPlayer
+                    ON Matches.Winner = WinnerPlayer.PlayerID
+                WHERE Matches.Player1 = ? OR Matches.Player2 = ?
+            """, (player_id, player_id))
 
             matches = cursor.fetchall()
+
             if matches:
                 print_as_table(cursor, matches)
                 pause_screen()
+
             else:
-                print("\nNo matches found for that player ID")
-                pause_screen() 
+                print("\nNo matches found for that player ID.")
+                pause_screen()
 
         else:
-            print("Invalid search option. Please enter 'ID' or 'Name'.")
-            pause_screen()
+            continue
 
         clear_screen()
 
-                
 
+# Create new match: handles create new match for the system.
 def create_new_match():
     while True:
         clear_screen()
         print("-" * 60)
         print("                  Create New Match")
         print("-" * 60)
-        
+
+        # Generate the next Match ID
         cursor.execute("SELECT MAX(MatchesID) FROM Matches;")
         result = cursor.fetchone()
-    
+
         if result is None or result[0] is None:
             next_number = 1
         else:
             current_id = result[0]
             next_number = int(current_id[1:]) + 1
-    
+
         matches_id = f"M{next_number:03d}"
         match_status = "To be played"
         match_winner = None
 
         print(f"Generated Match ID: {matches_id}")
         print(f"Match Status: {match_status}")
-        print(f"Match winner: None")
-    
-        while True:
-            tournament_id = input("Enter Tournament ID (or 'back' to go back): ").strip()
+        print("Match winner: None")
 
-            if tournament_id.lower() == "back":
+        # Select tournament
+        while True:
+            tournament_id = input(
+                "Enter Tournament ID (or 'back' to go back): "
+            ).strip().upper()
+
+            if tournament_id == "BACK":
                 return
 
-            cursor.execute("SELECT * FROM Tournament WHERE TournamentID = ?", (tournament_id,))
-            tourney = cursor.fetchone()
-            if tourney:
-                break
-            else:
-                print("No Tournament exists with that ID. Please try again:")
-                pause_screen()
+            cursor.execute("""
+                SELECT TournamentID, EventStatus
+                FROM Tournament
+                WHERE TournamentID = ?
+            """, (tournament_id,))
 
+            tourney = cursor.fetchone()
+
+            if not tourney:
+                print("No Tournament exists with that ID. Please try again.")
+                pause_screen()
+                continue
+
+            # A finished tournament should not receive new matches
+            if tourney[1] == "Finished":
+                print("You cannot create a match for a finished tournament.")
+                pause_screen()
+                continue
+
+            break
+
+        # Select Player 1 and Player 2
         while True:
-            player1 = input("Enter the first player's ID:").strip()
-            cursor.execute("SELECT * FROM Player WHERE PlayerID = ?", (player1,))
+            player1 = input(
+                "Enter the first player's ID: "
+            ).strip().upper()
+
+            cursor.execute(
+                "SELECT * FROM Player WHERE PlayerID = ?",
+                (player1,)
+            )
+
             player1_exists = cursor.fetchone()
 
-            if player1_exists:
-                cursor.execute("SELECT * FROM RegistrationList WHERE PlayerID = ? AND TournamentID = ?", (player1, tournament_id))
-                player1_registered = cursor.fetchone()
-
-                if player1_registered:
-
-                    player2 = input("Enter the second player's ID:").strip()
-
-                    if player2 == player1:
-                        print("A player cannot play against themselves.")
-                        pause_screen()
-                        continue
-
-                    cursor.execute("SELECT * FROM Player WHERE PlayerID = ?", (player2,))
-                    player2_exists = cursor.fetchone()
-                    
-                    if player2_exists:
-                        cursor.execute("SELECT * FROM RegistrationList WHERE PlayerID = ? AND TournamentID = ?", (player2, tournament_id))
-                        player2_registered = cursor.fetchone()
-                        if player2_registered:
-                            break
-                        else:
-                            print(f"Player {player2} isn't registered for the tournament")
-                            pause_screen()
-                    else:
-                        print("\nInvalid player ID, please try again")
-                        pause_screen()
-                else:
-                    print(f"Player {player1} isn't registered for the tournament")
-                    pause_screen()
-            else:
-                print("\nInvalid player ID, please try again")
+            if not player1_exists:
+                print("\nInvalid player ID, please try again.")
                 pause_screen()
+                continue
 
+            # Check Player 1 is registered for the tournament
+            cursor.execute("""
+                SELECT *
+                FROM RegistrationList
+                WHERE PlayerID = ? AND TournamentID = ?
+            """, (player1, tournament_id))
+
+            player1_registered = cursor.fetchone()
+
+            if not player1_registered:
+                print(
+                    f"Player {player1} isn't registered for the tournament."
+                )
+                pause_screen()
+                continue
+
+            player2 = input(
+                "Enter the second player's ID: "
+            ).strip().upper()
+
+            if player2 == player1:
+                print("A player cannot play against themselves.")
+                pause_screen()
+                continue
+
+            cursor.execute(
+                "SELECT * FROM Player WHERE PlayerID = ?",
+                (player2,)
+            )
+
+            player2_exists = cursor.fetchone()
+
+            if not player2_exists:
+                print("\nInvalid player ID, please try again.")
+                pause_screen()
+                continue
+
+            # Check Player 2 is registered for the tournament
+            cursor.execute("""
+                SELECT *
+                FROM RegistrationList
+                WHERE PlayerID = ? AND TournamentID = ?
+            """, (player2, tournament_id))
+
+            player2_registered = cursor.fetchone()
+
+            if not player2_registered:
+                print(
+                    f"Player {player2} isn't registered for the tournament."
+                )
+                pause_screen()
+                continue
+
+            break
+
+        # Enter round number
         while True:
-            round_number = input("Enter round number")
-            if round_number.isdigit():
-                break
-            else:
-                print("\nEnter a valid number:")
+            round_input = input("Enter round number: ").strip()
+
+            try:
+                round_number = int(round_input)
+
+                if round_number > 0:
+                    break
+
+                print("Round number must be greater than 0.")
                 pause_screen()
 
+            except ValueError:
+                print("Enter a valid whole number.")
+                pause_screen()
+
+        # Prevent duplicate matches between the same players
+        # in the same tournament and round.
         cursor.execute("""
-            INSERT INTO Matches (MatchesID, tournamentID, Player1, Player2, Winner, MatchStatus, Round) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (matches_id, tournament_id, player1, player2, match_winner, match_status, round_number))
+            SELECT MatchesID
+            FROM Matches
+            WHERE TournamentID = ?
+              AND Round = ?
+              AND (
+                    (Player1 = ? AND Player2 = ?)
+                    OR
+                    (Player1 = ? AND Player2 = ?)
+                  )
+        """, (
+            tournament_id,
+            round_number,
+            player1,
+            player2,
+            player2,
+            player1
+        ))
+
+        duplicate_match = cursor.fetchone()
+
+        if duplicate_match:
+            print(
+                f"\nThese players already have a match "
+                f"in Round {round_number} of this tournament."
+            )
+            pause_screen()
+            continue
+
+        # Insert the new match
+        cursor.execute("""
+            INSERT INTO Matches
+                (MatchesID, TournamentID, Player1, Player2,
+                 Winner, MatchStatus, Round)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            matches_id,
+            tournament_id,
+            player1,
+            player2,
+            match_winner,
+            match_status,
+            round_number
+        ))
 
         conn.commit()
 
-        print(f"\nMatch added successfully.")
+        print("\nMatch added successfully.")
         pause_screen()
         break
 
 
-
+# Edit match details: handles edit match details for the system.
 def edit_match_details():
     clear_screen()
+
     while True:
         print("-" * 60)
         print("                  Edit Match Details")
         print("-" * 60)
 
-        id_input = input("Enter Tournament ID (or type 'back'): ").strip().upper()
-        if id_input.lower() == "back":
+        id_input = input(
+            "Enter Match ID (or type 'back'): "
+        ).strip().upper()
+
+        if id_input == "BACK":
             break
-        
-        cursor.execute("SELECT * FROM Matches WHERE MatchesID = ?",(id_input,))
+
+        cursor.execute(
+            "SELECT * FROM Matches WHERE MatchesID = ?",
+            (id_input,)
+        )
+
         matches = cursor.fetchone()
 
         if matches:
             edit_match_details_checks(matches, cursor)
             break
+
         else:
             print("No Match found with that ID. Please try again.")
             pause_screen()
+
         clear_screen()
 
 
-
+# Edit match details checks: handles edit match details checks for the system.
 def edit_match_details_checks(matches, cursor):
     print_as_table(cursor, matches)
 
     matchid = matches[0]
 
     print("Please enter the match data you wish to change.")
-    print("If you do not wish to change anything in a specific column, just click enter.")
+    print("If you do not wish to change anything in a specific column, "
+          "just click Enter.")
+    print("Type 'back' at any time to cancel the edit.")
 
-    # Tournament ID
     while True:
-        tournamentid = input("Enter Tournament ID: ")
+        tournamentid = input("Enter Tournament ID: ").strip().upper()
 
         if tournamentid == "":
             tournamentid = matches[1]
             break
 
-        cursor.execute(
-            """
-            SELECT TournamentID
+        elif tournamentid == "BACK":
+            return
+
+        cursor.execute("""
+            SELECT TournamentID, EventStatus
             FROM Tournament
             WHERE TournamentID = ?
-            """,
-            (tournamentid,)
-        )
+        """, (tournamentid,))
 
-        if cursor.fetchone():
-            break
-        else:
+        tournament = cursor.fetchone()
+
+        if not tournament:
             print("Enter a valid Tournament ID.")
             pause_screen()
+            continue
 
-    # Player 1
+        # Do not allow a match to be moved into a finished tournament.
+        if tournament[1] == "Finished":
+            print("A match cannot be assigned to a finished tournament.")
+            pause_screen()
+            continue
+
+        break
+
     while True:
-        player1 = input("Enter Player 1 ID: ")
+        player1 = input("Enter Player 1 ID: ").strip().upper()
 
         if player1 == "":
             player1 = matches[2]
-            break
 
-        cursor.execute(
-            """
+        elif player1 == "BACK":
+            return
+
+        # Check that Player 1 exists
+        cursor.execute("""
+            SELECT PlayerID
+            FROM Player
+            WHERE PlayerID = ?
+        """, (player1,))
+
+        if not cursor.fetchone():
+            print("Enter a valid Player 1 ID.")
+            pause_screen()
+            continue
+
+        # Check Player 1 is registered for the selected tournament
+        cursor.execute("""
             SELECT PlayerID
             FROM RegistrationList
             WHERE TournamentID = ? AND PlayerID = ?
-            """,
-            (tournamentid, player1)
-        )
+        """, (tournamentid, player1))
 
         if cursor.fetchone():
             break
-        else:
-            print("Player 1 must be registered for this tournament.")
-            pause_screen()
 
+        print("Player 1 must be registered for this tournament.")
+        pause_screen()
+
+    # ---------------------------------------------------------
     # Player 2
+    # ---------------------------------------------------------
     while True:
-        player2 = input("Enter Player 2 ID: ")
+        player2 = input("Enter Player 2 ID: ").strip().upper()
 
         if player2 == "":
             player2 = matches[3]
-            break
+
+        elif player2 == "BACK":
+            return
 
         if player2 == player1:
             print("Player 1 and Player 2 cannot be the same player.")
             pause_screen()
             continue
 
-        cursor.execute(
-            """
+        # Check that Player 2 exists
+        cursor.execute("""
             SELECT PlayerID
-            FROM RegistrationList
-            WHERE TournamentID = ? AND PlayerID = ?
-            """,
-            (tournamentid, player2)
-        )
+            FROM Player
+            WHERE PlayerID = ?
+        """, (player2,))
 
-        if cursor.fetchone():
-            break
-        else:
-            print("Player 2 must be registered for this tournament.")
-            pause_screen()
-
-    # Winner
-    while True:
-        winner = input("Enter winner (Player ID): ")
-
-        # User wants to keep existing winner
-        if winner == "":
-            winner = matches[4]
-
-            # If there is no existing winner, that's fine
-            if winner is None:
-                break
-
-            # Make sure existing winner is still one of the new players
-            if winner == player1 or winner == player2:
-                break
-
-            print(
-                "The current winner is no longer one of the players "
-                "in this match."
-            )
-            print("Please enter a new winner.")
+        if not cursor.fetchone():
+            print("Enter a valid Player 2 ID.")
             pause_screen()
             continue
 
-        # User entered a new winner
+        # Check Player 2 is registered for the selected tournament
+        cursor.execute("""
+            SELECT PlayerID
+            FROM RegistrationList
+            WHERE TournamentID = ? AND PlayerID = ?
+        """, (tournamentid, player2))
+
+        if cursor.fetchone():
+            break
+
+        print("Player 2 must be registered for this tournament.")
+        pause_screen()
+
+    while True:
+        round_input = input("Enter round number: ").strip()
+
+        if round_input == "":
+            round_number = matches[6]
+            break
+
+        elif round_input.upper() == "BACK":
+            return
+
+        try:
+            round_number = int(round_input)
+
+            if round_number > 0:
+                break
+
+            print("Round number must be greater than 0.")
+            pause_screen()
+
+        except ValueError:
+            print("Enter a valid whole number.")
+            pause_screen()
+
+    cursor.execute("""
+        SELECT MatchesID
+        FROM Matches
+        WHERE TournamentID = ?
+          AND Round = ?
+          AND MatchesID != ?
+          AND (
+                (Player1 = ? AND Player2 = ?)
+                OR
+                (Player1 = ? AND Player2 = ?)
+              )
+    """, (
+        tournamentid,
+        round_number,
+        matchid,
+        player1,
+        player2,
+        player2,
+        player1
+    ))
+
+    duplicate_match = cursor.fetchone()
+
+    if duplicate_match:
+        print(
+            f"\nThese players already have a match "
+            f"in Round {round_number} of this tournament."
+        )
+        pause_screen()
+        return
+
+    while True:
+        winner = input("Enter winner (Player ID): ").strip().upper()
+
+        if winner == "":
+            winner = matches[4]
+
+        elif winner == "BACK":
+            return
+
+        # If there is no winner yet, allow NULL.
+        if winner == "":
+            winner = None
+            break
+
+        # Winner must be one of the two players.
         if winner == player1 or winner == player2:
             break
 
         print("Winner must be either Player 1 or Player 2.")
         pause_screen()
 
-    # Match Status
     while True:
         match_status = input(
             "Enter Match Status "
             "('To be played', 'In progress', 'Finished'): "
-        )
+        ).strip()
 
         if match_status == "":
             match_status = matches[5]
             break
+
+        elif match_status.lower() == "back":
+            return
 
         elif match_status in [
             "To be played",
@@ -1747,14 +1882,17 @@ def edit_match_details_checks(matches, cursor):
             )
             pause_screen()
 
-    # Make Winner and MatchStatus agree
+
     if match_status == "Finished":
 
-        # Finished matches MUST have a winner
+        # A finished match MUST have a winner.
         while winner is None:
             print("A finished match must have a winner.")
 
-            winner = input("Enter winner (Player ID): ")
+            winner = input("Enter winner (Player ID): ").strip().upper()
+
+            if winner == "BACK":
+                return
 
             if winner == player1 or winner == player2:
                 break
@@ -1763,34 +1901,10 @@ def edit_match_details_checks(matches, cursor):
             pause_screen()
 
     else:
-
-        # Unfinished matches cannot have a winner
+        # Unfinished matches cannot have a winner.
         winner = None
 
-    # Round
-    while True:
-        round_input = input("Enter round number: ")
-
-        if round_input == "":
-            round_number = matches[6]
-            break
-
-        try:
-            round_number = int(round_input)
-
-            if round_number > 0:
-                break
-
-            print("Round number must be greater than 0.")
-            pause_screen()
-
-        except ValueError:
-            print("Enter a valid whole number.")
-            pause_screen()
-
-    # Update Match
-    cursor.execute(
-        """
+    cursor.execute("""
         UPDATE Matches
         SET TournamentID = ?,
             Player1 = ?,
@@ -1799,17 +1913,15 @@ def edit_match_details_checks(matches, cursor):
             MatchStatus = ?,
             Round = ?
         WHERE MatchesID = ?
-        """,
-        (
-            tournamentid,
-            player1,
-            player2,
-            winner,
-            match_status,
-            round_number,
-            matchid
-        )
-    )
+    """, (
+        tournamentid,
+        player1,
+        player2,
+        winner,
+        match_status,
+        round_number,
+        matchid
+    ))
 
     conn.commit()
 
@@ -1817,7 +1929,7 @@ def edit_match_details_checks(matches, cursor):
     pause_screen()
 
 
-
+# Delete match: handles delete match for the system.
 def delete_match():
     while True:
         clear_screen()
@@ -1825,37 +1937,54 @@ def delete_match():
         print("                  Delete Match")
         print("-" * 60)
 
-        id_input = input("Enter Match ID to delete (or type 'back'): ").strip().upper()
-        
+        id_input = input(
+            "Enter Match ID to delete (or type 'back'): "
+        ).strip().upper()
+
         if id_input == "BACK":
             break
 
-        cursor.execute("SELECT * FROM Matches WHERE MatchesID = ?", (id_input,))
+        cursor.execute(
+            "SELECT * FROM Matches WHERE MatchesID = ?",
+            (id_input,)
+        )
+
         matches = cursor.fetchone()
 
         if matches:
             print_as_table(cursor, matches)
+
+            # Finished matches cannot be deleted.
             if matches[5] == "Finished":
                 print("Finished matches cannot be cancelled.")
                 pause_screen()
-                continue  
+                continue
 
-            confirm = input(f"Are you sure you want to cancel this match? (yes/no): ").lower().strip()
+            confirm = input(
+                "Are you sure you want to cancel this match? (yes/no): "
+            ).lower().strip()
+
             if confirm == "yes":
-                cursor.execute("DELETE FROM Matches WHERE MatchesID = ?", (matches[0],))
+                cursor.execute(
+                    "DELETE FROM Matches WHERE MatchesID = ?",
+                    (matches[0],)
+                )
+
                 conn.commit()
-                print("Match cancelled successfully")
+
+                print("Match cancelled successfully.")
                 pause_screen()
-                break  
+                break
 
             elif confirm == "no":
                 print("Cancellation cancelled.")
                 pause_screen()
-                break 
-                
+                break
+
             else:
                 print("Please enter 'yes' or 'no'.")
                 pause_screen()
+
         else:
             print("No match found with that ID. Please try again.")
             pause_screen()
@@ -1864,20 +1993,86 @@ def delete_match():
 
 
 
-def manage_cards():
-    if user_position in ["Administrator", "Moderator"]:
-        clear_screen()
-        print("-" * 75)
-        print("                       Manage Cards")
-        print("-" * 75)
-        print("  [1] View Card Details           [4] Delete Card")
-        print("  [2] Edit Card Details           [0] Back to Main Menu ")
-        print("  [3] Create Card  ")
-        print("")
-        return input("\nSelect an option: ").strip()
-    elif user_position == "Staff":
-        return
 
+VALID_RARITIES = {
+    "Common", "Uncommon", "Rare", "Rare Holo", "Double Rare",
+    "Ultra Rare", "Illustration Rare", "Special Illustration Rare",
+    "Hyper Rare", "Ace Spec"
+}
+
+VALID_CARD_TYPES = {
+    "1": "Creature Card",
+    "2": "Trainer Card",
+    "3": "Energy Card"
+}
+
+
+def _get_next_card_id():
+    """Return the next available C### style CardID."""
+    cursor.execute("SELECT CardID FROM Card")
+    ids = cursor.fetchall()
+    numbers = []
+    for row in ids:
+        value = row[0]
+        if isinstance(value, str) and value.startswith("C") and value[1:].isdigit():
+            numbers.append(int(value[1:]))
+    next_number = max(numbers, default=0) + 1
+    return f"C{next_number:03d}"
+
+
+def _get_next_child_id(card_id, table, column, prefix):
+    """Return the next C###-AT# / C###-AB# style child ID."""
+    cursor.execute(
+        f"SELECT {column} FROM {table} WHERE CardID = ?", (card_id,)
+    )
+    ids = cursor.fetchall()
+    numbers = []
+    marker = f"-{prefix}"
+    for row in ids:
+        value = row[0]
+        if isinstance(value, str) and marker in value:
+            suffix = value.rsplit(marker, 1)[-1]
+            if suffix.isdigit():
+                numbers.append(int(suffix))
+    return f"{card_id}{marker}{max(numbers, default=0) + 1}"
+
+
+def _ask_non_empty(prompt):
+    while True:
+        value = input(prompt).strip()
+        if value:
+            return value
+        print("This field cannot be blank.")
+
+
+def _ask_rarity(current=None):
+    while True:
+        prompt = "Rarity"
+        if current is not None:
+            prompt += f" [{current}]"
+        value = input(f"Update {prompt}: " if current is not None else "Rarity: ").strip()
+        if not value and current is not None:
+            return current
+        if value in VALID_RARITIES:
+            return value
+        print("Invalid rarity. Please choose a valid rarity.")
+
+
+def manage_cards():
+    if user_position not in ["Administrator", "Moderator"]:
+        print("You do not have permission to manage cards.")
+        pause_screen()
+        return "0"
+
+    clear_screen()
+    print("-" * 75)
+    print("                       Manage Cards")
+    print("-" * 75)
+    print("  [1] View Card Details           [4] Delete Card")
+    print("  [2] Edit Card Details           [0] Back to Main Menu")
+    print("  [3] Create Card")
+    print("")
+    return input("\nSelect an option: ").strip()
 
 
 def view_card_details():
@@ -1888,11 +2083,14 @@ def view_card_details():
         print("-" * 90)
         category = input("""
 [1] View Specific Card Details                                [3] View all cards
-[2] View cards of a specific card type/element type/rarity    [0] Back""")
-        
+[2] View cards of a specific card type/element type/rarity    [0] Back
+
+Select an option: """).strip().lower()
+
         if category == "0":
-            break
-        elif category == "1":
+            return
+
+        if category == "1":
             while True:
                 clear_screen()
                 print("-" * 60)
@@ -1901,95 +2099,117 @@ def view_card_details():
                 choice = input("Search by Card 'Name' or 'ID' (or type 'back'): ").strip().lower()
                 if choice == "back":
                     break
-                elif choice == "id":
+                if choice not in ("id", "name"):
+                    print("Please enter 'id', 'name', or 'back'.")
+                    pause_screen()
+                    continue
+
+                if choice == "id":
                     while True:
-                        card_id = input("Enter Card ID: ").strip()
+                        card_id = input("Enter Card ID (or type 'back'): ").strip()
+                        if card_id.lower() == "back":
+                            break
                         cursor.execute("SELECT * FROM Card WHERE CardID = ?", (card_id,))
                         card = cursor.fetchone()
                         if card:
-                            print_as_table(cursor, [card])  # Wrapped in list for table formatting
+                            print_as_table(cursor, [card])
                             pause_screen()
                             break
-                        else:
-                            print("\nInvalid Card ID")
-                            pause_screen()
-                elif choice == "name":
+                        print("\nInvalid Card ID")
+                        pause_screen()
+                else:
                     while True:
-                        cardname = input("Enter Card Name: ").strip()
-                        cursor.execute("SELECT * FROM Card WHERE CardName LIKE ?", (f"%{cardname}%",))
+                        cardname = input("Enter Card Name (or type 'back'): ").strip()
+                        if cardname.lower() == "back":
+                            break
+                        cursor.execute(
+                            "SELECT * FROM Card WHERE CardName LIKE ? ORDER BY CardName ASC",
+                            (f"%{cardname}%",)
+                        )
                         cards = cursor.fetchall()
                         if cards:
                             print_as_table(cursor, cards)
-                        else:
-                            print("\nInvalid Card name")
                             pause_screen()
-                    
+                            break
+                        print("\nNo matching Card Name found.")
+                        pause_screen()
+
         elif category == "2":
             while True:
                 clear_screen()
                 print("-" * 60)
                 print("             View Cards by Category")
                 print("-" * 60)
-                choice = input("Select from: Creature, Trainer, Energy, Type, Rarity (or type 'back'): ").strip().lower()
+                choice = input(
+                    "Select from: Creature, Trainer, Energy, Type, Rarity (or type 'back'): "
+                ).strip().lower()
                 if choice == "back":
                     break
 
-                elif choice in ["creature", "trainer", "energy"]:
-                    while True:
-                        # Map input string to your stored database CardType strings
-                        type_map = {"creature": "Creature Card", "trainer": "Trainer Card", "energy": "Energy Card"}
-                        target_type = type_map[choice]
-                        
-                        cursor.execute("SELECT COUNT(CardID) FROM Card WHERE CardType = ?", (target_type,))
-                        num_cards = cursor.fetchone()[0]
-                        print(f"\nTotal Number of {target_type}s: {num_cards}")
-                        
-                        cursor.execute("SELECT * FROM Card WHERE CardType = ?", (target_type,))
-                        cards = cursor.fetchall()
-                        if cards:
-                            print_as_table(cursor, cards)
-                            pause_screen()
-                            break
-                        else:
-                            print(f"\nNo {target_type}s found")
-                            pause_screen()
+                if choice in ("creature", "trainer", "energy"):
+                    target_type = {
+                        "creature": "Creature Card",
+                        "trainer": "Trainer Card",
+                        "energy": "Energy Card"
+                    }[choice]
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM Card WHERE CardType = ?", (target_type,)
+                    )
+                    num_cards = cursor.fetchone()[0]
+                    print(f"\nTotal Number of {target_type}s: {num_cards}")
+                    cursor.execute(
+                        "SELECT * FROM Card WHERE CardType = ? ORDER BY CardID ASC",
+                        (target_type,)
+                    )
+                    cards = cursor.fetchall()
+                    if cards:
+                        print_as_table(cursor, cards)
+                    else:
+                        print(f"\nNo {target_type}s found")
+                    pause_screen()
 
                 elif choice == "type":
-                    while True:
-                        element_type = input("Enter Type (e.g., Fire, Water, Lightning): ").strip()
-                        cursor.execute("""
-                        SELECT Card.* 
+                    element_type = input(
+                        "Enter Type (e.g., Fire, Water, Lightning) (or type 'back'): "
+                    ).strip()
+                    if element_type.lower() == "back":
+                        continue
+                    cursor.execute("""
+                        SELECT DISTINCT Card.*
                         FROM Card
                         LEFT JOIN CreatureCard ON CreatureCard.CardID = Card.CardID
                         LEFT JOIN EnergyCard ON EnergyCard.CardID = Card.CardID
-                        WHERE CreatureCard.ElementType = ? OR EnergyCard.ElementType = ?
-                        """, (element_type, element_type))
-                        cards = cursor.fetchall()
-                        print(f"\nTotal Cards of Element '{element_type}': {len(cards)}")
-                        if cards:
-                            print_as_table(cursor, cards)
-                            pause_screen()
-                            break
-                        else:
-                            print("\nNo Cards of this Element found")
-                            pause_screen()
+                        WHERE CreatureCard.ElementType = ?
+                           OR EnergyCard.ElementType = ?
+                        ORDER BY Card.CardID ASC
+                    """, (element_type, element_type))
+                    cards = cursor.fetchall()
+                    print(f"\nTotal Cards of Element '{element_type}': {len(cards)}")
+                    if cards:
+                        print_as_table(cursor, cards)
+                    else:
+                        print("\nNo Cards of this Element found")
+                    pause_screen()
 
                 elif choice == "rarity":
-                    while True:
-                        rarity = input("Enter Rarity (e.g., Common, Rare, Ultra Rare): ").strip()
-                        cursor.execute("SELECT * FROM Card WHERE Rarity LIKE ?", (f"%{rarity}%",))
-                        cards = cursor.fetchall()
-                        print(f"\nTotal Cards of Rarity '{rarity}': {len(cards)}")
-                        if cards:
-                            print_as_table(cursor, cards)
-                            pause_screen()
-                            break
-                        else:
-                            print("\nNo Cards of this Rarity found")
-                            pause_screen()  
-
+                    rarity = input(
+                        "Enter Rarity (e.g., Common, Rare, Ultra Rare) (or type 'back'): "
+                    ).strip()
+                    if rarity.lower() == "back":
+                        continue
+                    cursor.execute(
+                        "SELECT * FROM Card WHERE Rarity LIKE ? ORDER BY CardID ASC",
+                        (f"%{rarity}%",)
+                    )
+                    cards = cursor.fetchall()
+                    print(f"\nTotal Cards of Rarity '{rarity}': {len(cards)}")
+                    if cards:
+                        print_as_table(cursor, cards)
+                    else:
+                        print("\nNo Cards of this Rarity found")
+                    pause_screen()
                 else:
-                    print("Invalid option")
+                    print("Invalid option.")
                     pause_screen()
 
         elif category == "3":
@@ -1998,82 +2218,50 @@ def view_card_details():
                 print("-" * 60)
                 print("             View All Cards")
                 print("-" * 60)
-                choice = input("Order by id, name, card number or rarity? (or type 'back'): ").strip().lower()
+                choice = input(
+                    "Order by id, name, card number or rarity? (or type 'back'): "
+                ).strip().lower()
                 if choice == "back":
                     break
-                elif choice == "name":
-                    cursor.execute("""
-                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
-                    FROM Card
-                    JOIN CardSet ON Card.SetId = CardSet.SetID
-                    ORDER BY CardName ASC""")
-                    cards = cursor.fetchall()
-                    if cards:
-                        print_as_table(cursor, cards)
-                        pause_screen()
-                    else:
-                        print("No Card Found (gasp)")
-                        pause_screen()
-                elif choice == "id":
-                    cursor.execute("""
-                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
-                    FROM Card
-                    JOIN CardSet ON Card.SetId = CardSet.SetID
-                    ORDER BY CardID ASC""")
-                    cards = cursor.fetchall()
-                    if cards:
-                        print_as_table(cursor, cards)
-                        pause_screen()
-                    else:
-                        print("No Card Found (gasp)")
-                        pause_screen()
-                elif choice == "card number":
-                    cursor.execute("""
-                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
-                    FROM Card
-                    JOIN CardSet ON Card.SetId = CardSet.SetID
-                    ORDER BY CardNUmber ASC""")
-                    cards = cursor.fetchall()
-                    if cards:
-                        print_as_table(cursor, cards)
-                        pause_screen()
-                    else:
-                        print("No Card Found (gasp)")
-                        pause_screen()
-                elif choice == "rarity":
-                    cursor.execute("""
-                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
-                    FROM Card
-                    JOIN CardSet ON Card.SEtId = CardSet.SetID
-                    ORDER BY
-                        CASE Card.Rarity
-                            WHEN 'Special Illustration Rare' THEN 1
-                            WHEN 'Illustration Rare'         THEN 2
-                            WHEN 'Hyper Rare'                THEN 3
-                            WHEN 'Ultra Rare'                THEN 4
-                            WHEN 'Ace Spec'                  THEN 5
-                            WHEN 'Double Rare'               THEN 6
-                            WHEN 'Rare Holo'                 THEN 7
-                            WHEN 'Rare'                      THEN 8
-                            WHEN 'Uncommon'                  THEN 9
-                            WHEN 'Common'                    THEN 10
-                            ELSE 11
-                        END ASC""")
-                    cards = cursor.fetchall()
-                    if cards:
-                        print_as_table(cursor, cards)
-                        pause_screen()
-                    else:
-                        print("No Card Found (gasp)")
-                        pause_screen()
-                else:
-                    print("Invalid option")
+
+                if choice not in ("name", "id", "card number", "rarity"):
+                    print("Invalid sort option.")
                     pause_screen()
+                    continue
 
+                order_clause = {
+                    "name": "CardName ASC",
+                    "id": "CardID ASC",
+                    "card number": "CardNumber ASC",
+                    "rarity": """CASE Card.Rarity
+                        WHEN 'Special Illustration Rare' THEN 1
+                        WHEN 'Illustration Rare' THEN 2
+                        WHEN 'Hyper Rare' THEN 3
+                        WHEN 'Ultra Rare' THEN 4
+                        WHEN 'Ace Spec' THEN 5
+                        WHEN 'Double Rare' THEN 6
+                        WHEN 'Rare Holo' THEN 7
+                        WHEN 'Rare' THEN 8
+                        WHEN 'Uncommon' THEN 9
+                        WHEN 'Common' THEN 10
+                        ELSE 11 END ASC, CardName ASC"""
+                }[choice]
+
+                cursor.execute(f"""
+                    SELECT CardID, CardName, CardType, CardNumber, Rarity, SetName
+                    FROM Card
+                    JOIN CardSet ON Card.SetID = CardSet.SetID
+                    ORDER BY {order_clause}
+                """)
+                cards = cursor.fetchall()
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("No Card Found (gasp)")
+                pause_screen()
         else:
-            print("invalid option")
-            pause_screen
-
+            print("Invalid option.")
+            pause_screen()
 
 
 def edit_card():
@@ -2082,7 +2270,6 @@ def edit_card():
         print("-" * 60)
         print("                  Edit Card Details")
         print("-" * 60)
-
         category = input("""
 [1] Edit Creature Card
 [2] Edit Trainer Card
@@ -2092,370 +2279,176 @@ def edit_card():
 Select an option: """).strip()
 
         if category == "0":
-            break
-
-        elif category in ["1", "2", "3"]:
-
-            type_map = {
-                "1": "Creature Card",
-                "2": "Trainer Card",
-                "3": "Energy Card"
-            }
-
-            card_type = type_map[category]
-
-            while True:
-                clear_screen()
-                print("-" * 60)
-                print(f"              Edit {card_type}")
-                print("-" * 60)
-
-                choice = input(
-                    "Enter Card ID or Card Name (or type 'back'): "
-                ).strip()
-
-                if choice.lower() == "back":
-                    break
-
-                cursor.execute("""
-                    SELECT *
-                    FROM Card
-                    WHERE (CardID = ? OR CardName = ?)
-                    AND CardType = ?
-                """, (choice, choice, card_type))
-
-                card = cursor.fetchone()
-
-                if card:
-                    edit_card_details_checks(card, cursor, card_type)
-                    break
-                else:
-                    print("\nCard not found.")
-                    pause_screen()
-
-        else:
+            return
+        if category not in VALID_CARD_TYPES:
             print("Invalid option.")
+            pause_screen()
+            continue
+
+        card_type = VALID_CARD_TYPES[category]
+        while True:
+            clear_screen()
+            print("-" * 60)
+            print(f"              Edit {card_type}")
+            print("-" * 60)
+            choice = input("Enter Card ID or Card Name (or type 'back'): ").strip()
+            if choice.lower() == "back":
+                break
+
+            cursor.execute("""
+                SELECT *
+                FROM Card
+                WHERE (CardID = ? OR CardName = ?)
+                  AND CardType = ?
+            """, (choice, choice, card_type))
+            card = cursor.fetchone()
+            if card:
+                edit_card_details_checks(card, cursor, card_type)
+                break
+            print("\nCard not found or card type does not match.")
             pause_screen()
 
 
-
 def edit_card_details_checks(card, cursor, card_type):
-
     cardid = card[0]
 
-    while True:
+    try:
         clear_screen()
         print("-" * 60)
         print("                  Edit Card Details")
         print("-" * 60)
-
         print_as_table(cursor, [card])
-
         print("\nPlease enter the card data you wish to change.")
         print("If you do not wish to change a field, just press Enter.")
 
-        # ==========================================
-        # COMMON CARD DETAILS
-        # ==========================================
-
-        # Card Name
+        # Common Card fields
         while True:
-            new_cardname = input(
-                f"Update Card Name [{card[2]}]: "
-            ).strip()
-
-            if new_cardname == "":
+            new_cardname = input(f"Update Card Name [{card[2]}]: ").strip()
+            if not new_cardname:
                 new_cardname = card[2]
                 break
-
-            cursor.execute("""
-                SELECT CardID
-                FROM Card
-                WHERE CardName = ?
-                AND CardID != ?
-            """, (new_cardname, cardid))
-
+            cursor.execute(
+                "SELECT CardID FROM Card WHERE CardName = ? AND CardID != ?",
+                (new_cardname, cardid)
+            )
             if cursor.fetchone():
                 print("A card with that name already exists.")
             else:
                 break
 
-        # Set ID
         while True:
-            new_setid = input(
-                f"Update Set ID [{card[1]}]: "
-            ).strip()
-
-            if new_setid == "":
+            new_setid = input(f"Update Set ID [{card[1]}]: ").strip()
+            if not new_setid:
                 new_setid = card[1]
                 break
-
-            cursor.execute("""
-                SELECT SetID
-                FROM CardSet
-                WHERE SetID = ?
-            """, (new_setid,))
-
+            cursor.execute("SELECT SetID FROM CardSet WHERE SetID = ?", (new_setid,))
             if cursor.fetchone():
                 break
-
             print("Invalid Set ID.")
 
-        # Card Number
         while True:
-            new_cardnumber = input(
-                f"Update Card Number [{card[4]}]: "
-            ).strip()
-
-            if new_cardnumber == "":
+            new_cardnumber = input(f"Update Card Number [{card[4]}]: ").strip()
+            if not new_cardnumber:
                 new_cardnumber = card[4]
                 break
-
             cursor.execute("""
                 SELECT CardID
                 FROM Card
                 WHERE CardNumber = ?
-                AND CardID != ?
-            """, (new_cardnumber, cardid))
-
+                  AND SetID = ?
+                  AND CardID != ?
+            """, (new_cardnumber, new_setid, cardid))
             if cursor.fetchone():
-                print("A card with that number already exists.")
+                print("A card with that number already exists in this set.")
             else:
                 break
 
-        # Rarity
-        new_rarity = input(
-            f"Update Rarity [{card[5]}]: "
-        ).strip()
-
-        if new_rarity == "":
-            new_rarity = card[5]
-
-        # ==========================================
-        # UPDATE CARD
-        # ==========================================
+        new_rarity = _ask_rarity(card[5])
 
         cursor.execute("""
             UPDATE Card
-            SET SetID = ?,
-                CardName = ?,
-                CardNumber = ?,
-                Rarity = ?
+            SET SetID = ?, CardName = ?, CardNumber = ?, Rarity = ?
             WHERE CardID = ?
-        """, (
-            new_setid,
-            new_cardname,
-            new_cardnumber,
-            new_rarity,
-            cardid
-        ))
-
-        # ==========================================
-        # CREATURE CARD
-        # ==========================================
+        """, (new_setid, new_cardname, new_cardnumber, new_rarity, cardid))
 
         if card_type == "Creature Card":
-
             cursor.execute("""
-                SELECT EvolutionStage,
-                       HP,
-                       ElementType,
-                       RetreatCost,
-                       Weakness,
-                       Resistance
-                FROM CreatureCard
-                WHERE CardID = ?
+                SELECT EvolutionStage, HP, ElementType, RetreatCost, Weakness, Resistance
+                FROM CreatureCard WHERE CardID = ?
             """, (cardid,))
-
             creature = cursor.fetchone()
+            if creature is None:
+                raise ValueError(f"CreatureCard data is missing for {cardid}.")
 
-            # Evolution Stage
-            new_evolution = input(
-                f"Update Evolution Stage [{creature[0]}]: "
-            ).strip()
-
-            if new_evolution == "":
-                new_evolution = creature[0]
-
-            # HP
+            new_evolution = input(f"Update Evolution Stage [{creature[0]}]: ").strip() or creature[0]
             while True:
-                new_hp = input(
-                    f"Update HP [{creature[1]}]: "
-                ).strip()
-
-                if new_hp == "":
+                value = input(f"Update HP [{creature[1]}]: ").strip()
+                if not value:
                     new_hp = creature[1]
                     break
-
-                if new_hp.isdigit() and int(new_hp) > 0:
-                    new_hp = int(new_hp)
+                if value.isdigit() and int(value) > 0:
+                    new_hp = int(value)
                     break
-
                 print("HP must be a positive number.")
 
-            # Element Type
-            new_element = input(
-                f"Update Element Type [{creature[2]}]: "
-            ).strip()
-
-            if new_element == "":
-                new_element = creature[2]
-
-            # Retreat Cost
+            new_element = input(f"Update Element Type [{creature[2]}]: ").strip() or creature[2]
             while True:
-                new_retreat = input(
-                    f"Update Retreat Cost [{creature[3]}]: "
-                ).strip()
-
-                if new_retreat == "":
+                value = input(f"Update Retreat Cost [{creature[3]}]: ").strip()
+                if not value:
                     new_retreat = creature[3]
                     break
-
-                if new_retreat.isdigit() and int(new_retreat) >= 0:
-                    new_retreat = int(new_retreat)
+                if value.isdigit() and int(value) >= 0:
+                    new_retreat = int(value)
                     break
+                print("Retreat Cost must be a non-negative number.")
 
-                print("Retreat Cost must be a number.")
-
-            # Weakness
-            new_weakness = input(
-                f"Update Weakness [{creature[4]}]: "
-            ).strip()
-
-            if new_weakness == "":
-                new_weakness = creature[4]
-
-            # Resistance
-            new_resistance = input(
-                f"Update Resistance [{creature[5]}]: "
-            ).strip()
-
-            if new_resistance == "":
-                new_resistance = creature[5]
+            new_weakness = input(f"Update Weakness [{creature[4]}]: ").strip() or creature[4]
+            new_resistance = input(f"Update Resistance [{creature[5]}]: ").strip() or creature[5]
 
             cursor.execute("""
                 UPDATE CreatureCard
-                SET EvolutionStage = ?,
-                    HP = ?,
-                    ElementType = ?,
-                    RetreatCost = ?,
-                    Weakness = ?,
-                    Resistance = ?
+                SET EvolutionStage = ?, HP = ?, ElementType = ?, RetreatCost = ?,
+                    Weakness = ?, Resistance = ?
                 WHERE CardID = ?
-            """, (
-                new_evolution,
-                new_hp,
-                new_element,
-                new_retreat,
-                new_weakness,
-                new_resistance,
-                cardid
-            ))
-
-        # ==========================================
-        # TRAINER CARD
-        # ==========================================
+            """, (new_evolution, new_hp, new_element, new_retreat,
+                  new_weakness, new_resistance, cardid))
 
         elif card_type == "Trainer Card":
-
-            cursor.execute("""
-                SELECT Subtype, Rules
-                FROM TrainerCard
-                WHERE CardID = ?
-            """, (cardid,))
-
+            cursor.execute(
+                "SELECT Subtype, Rules FROM TrainerCard WHERE CardID = ?", (cardid,)
+            )
             trainer = cursor.fetchone()
+            if trainer is None:
+                raise ValueError(f"TrainerCard data is missing for {cardid}.")
 
-            # Subtype
-            new_subtype = input(
-                f"Update Subtype [{trainer[0]}]: "
-            ).strip()
-
-            if new_subtype == "":
-                new_subtype = trainer[0]
-
-            # Rules
-            new_rules = input(
-                f"Update Rules [{trainer[1]}]: "
-            ).strip()
-
-            if new_rules == "":
-                new_rules = trainer[1]
-
+            new_subtype = input(f"Update Subtype [{trainer[0]}]: ").strip() or trainer[0]
+            new_rules = input(f"Update Rules [{trainer[1]}]: ").strip() or trainer[1]
             cursor.execute("""
                 UPDATE TrainerCard
-                SET Subtype = ?,
-                    Rules = ?
+                SET Subtype = ?, Rules = ?
                 WHERE CardID = ?
-            """, (
-                new_subtype,
-                new_rules,
-                cardid
-            ))
-
-        # ==========================================
-        # ENERGY CARD
-        # ==========================================
+            """, (new_subtype, new_rules, cardid))
 
         elif card_type == "Energy Card":
-
             cursor.execute("""
-                SELECT ElementType,
-                       EnergyType,
-                       SpecialEffects
-                FROM EnergyCard
-                WHERE CardID = ?
+                SELECT ElementType, EnergyType, SpecialEffects
+                FROM EnergyCard WHERE CardID = ?
             """, (cardid,))
-
             energy = cursor.fetchone()
+            if energy is None:
+                raise ValueError(f"EnergyCard data is missing for {cardid}.")
 
-            # Element Type
-            new_element = input(
-                f"Update Element Type [{energy[0]}]: "
-            ).strip()
-
-            if new_element == "":
-                new_element = energy[0]
-
-            # Energy Type
-            new_energytype = input(
-                f"Update Energy Type [{energy[1]}]: "
-            ).strip()
-
-            if new_energytype == "":
-                new_energytype = energy[1]
-
-            # Special Effects
-            new_effects = input(
-                f"Update Special Effects [{energy[2]}]: "
-            ).strip()
-
-            if new_effects == "":
-                new_effects = energy[2]
-
+            new_element = input(f"Update Element Type [{energy[0]}]: ").strip() or energy[0]
+            new_energytype = input(f"Update Energy Type [{energy[1]}]: ").strip() or energy[1]
+            new_effects = input(f"Update Special Effects [{energy[2]}]: ").strip() or energy[2]
             cursor.execute("""
                 UPDATE EnergyCard
-                SET ElementType = ?,
-                    EnergyType = ?,
-                    SpecialEffects = ?
+                SET ElementType = ?, EnergyType = ?, SpecialEffects = ?
                 WHERE CardID = ?
-            """, (
-                new_element,
-                new_energytype,
-                new_effects,
-                cardid
-            ))
+            """, (new_element, new_energytype, new_effects, cardid))
 
-        # ==========================================
-        # EDIT / ADD ATTACKS AND ABILITIES
-        # ==========================================
-
+        # Attacks and abilities are part of the same transaction.
         if card_type == "Creature Card":
-
-            # ==========================================
-            # ATTACKS
-            # ==========================================
-
             while True:
                 attack_choice = input("""
 Would you like to:
@@ -2464,23 +2457,14 @@ Would you like to:
 [3] Finish attacks
 
 Select an option: """).strip()
-
                 if attack_choice == "1":
-                    edit_attack(cardid)
-
+                    edit_attack(cardid, commit=False)
                 elif attack_choice == "2":
-                    add_attack(cardid)
-
+                    add_attack(cardid, commit=False)
                 elif attack_choice == "3":
                     break
-
                 else:
                     print("Invalid option.")
-                    pause_screen()
-
-            # ==========================================
-            # ABILITIES
-            # ==========================================
 
             while True:
                 ability_choice = input("""
@@ -2490,307 +2474,137 @@ Would you like to:
 [3] Finish abilities
 
 Select an option: """).strip()
-
                 if ability_choice == "1":
-                    edit_ability(cardid)
-
+                    edit_ability(cardid, commit=False)
                 elif ability_choice == "2":
-                    add_ability(cardid)
-
+                    add_ability(cardid, commit=False)
                 elif ability_choice == "3":
                     break
-
                 else:
                     print("Invalid option.")
-                    pause_screen()
-
-        # ==========================================
-        # SAVE CHANGES
-        # ==========================================
 
         conn.commit()
-
         print("\nCard details updated successfully!")
         pause_screen()
-        break
+
+    except (sqlite3.Error, ValueError) as error:
+        conn.rollback()
+        print(f"\nUpdate failed. No changes were saved.")
+        print(f"Reason: {error}")
+        pause_screen()
 
 
-
-def edit_attack(card_id):
-
+def edit_attack(card_id, commit=True):
     cursor.execute("""
         SELECT AttackID, AttackName, Damage, EnergyCost, Effect
-        FROM AttackDetails
-        WHERE CardID = ?
+        FROM AttackDetails WHERE CardID = ? ORDER BY AttackID
     """, (card_id,))
-
     attacks = cursor.fetchall()
-
     if not attacks:
         print("\nThis card has no attacks to edit.")
         pause_screen()
-        return
+        return False
 
     print("\nExisting Attacks:")
     print_as_table(cursor, attacks)
-
     while True:
         attack_id = input("\nEnter Attack ID to edit (or type 'back'): ").strip()
-
         if attack_id.lower() == "back":
-            return
-
+            return False
         cursor.execute("""
             SELECT AttackID, AttackName, Damage, EnergyCost, Effect
             FROM AttackDetails
-            WHERE AttackID = ?
-            AND CardID = ?
+            WHERE AttackID = ? AND CardID = ?
         """, (attack_id, card_id))
-
         attack = cursor.fetchone()
-
         if attack:
             break
-
         print("Invalid Attack ID.")
 
-    # Attack Name
-    new_name = input(
-        f"Update Attack Name [{attack[1]}]: "
-    ).strip()
-
-    if new_name == "":
-        new_name = attack[1]
-
-    # Damage
-    new_damage = input(
-        f"Update Damage [{attack[2]}]: "
-    ).strip()
-
-    if new_damage == "":
-        new_damage = attack[2]
-
-    # Energy Cost
-    new_energy = input(
-        f"Update Energy Cost [{attack[3]}]: "
-    ).strip()
-
-    if new_energy == "":
-        new_energy = attack[3]
-
-    # Effect
-    new_effect = input(
-        f"Update Effect [{attack[4]}]: "
-    ).strip()
-
-    if new_effect == "":
-        new_effect = attack[4]
+    new_name = input(f"Update Attack Name [{attack[1]}]: ").strip() or attack[1]
+    new_damage = input(f"Update Damage [{attack[2]}]: ").strip() or attack[2]
+    new_energy = input(f"Update Energy Cost [{attack[3]}]: ").strip() or attack[3]
+    new_effect = input(f"Update Effect [{attack[4]}]: ").strip() or attack[4]
 
     cursor.execute("""
         UPDATE AttackDetails
-        SET AttackName = ?,
-            Damage = ?,
-            EnergyCost = ?,
-            Effect = ?
-        WHERE AttackID = ?
-    """, (
-        new_name,
-        new_damage,
-        new_energy,
-        new_effect,
-        attack_id
-    ))
+        SET AttackName = ?, Damage = ?, EnergyCost = ?, Effect = ?
+        WHERE AttackID = ? AND CardID = ?
+    """, (new_name, new_damage, new_energy, new_effect, attack_id, card_id))
 
-    conn.commit()
-
+    if commit:
+        conn.commit()
     print(f"\nAttack {attack_id} updated successfully!")
     pause_screen()
+    return True
 
 
-
-def edit_ability(card_id):
-
+def edit_ability(card_id, commit=True):
     cursor.execute("""
         SELECT AbilityID, AbilityName, AbilityType, Description
-        FROM CardAbility
-        WHERE CardID = ?
+        FROM CardAbility WHERE CardID = ? ORDER BY AbilityID
     """, (card_id,))
-
     abilities = cursor.fetchall()
-
     if not abilities:
         print("\nThis card has no abilities to edit.")
         pause_screen()
-        return
+        return False
 
     print("\nExisting Abilities:")
     print_as_table(cursor, abilities)
-
     while True:
         ability_id = input("\nEnter Ability ID to edit (or type 'back'): ").strip()
-
         if ability_id.lower() == "back":
-            return
-
+            return False
         cursor.execute("""
             SELECT AbilityID, AbilityName, AbilityType, Description
             FROM CardAbility
-            WHERE AbilityID = ?
-            AND CardID = ?
+            WHERE AbilityID = ? AND CardID = ?
         """, (ability_id, card_id))
-
         ability = cursor.fetchone()
-
         if ability:
             break
-
         print("Invalid Ability ID.")
 
-    # Ability Name
-    new_name = input(
-        f"Update Ability Name [{ability[1]}]: "
-    ).strip()
-
-    if new_name == "":
-        new_name = ability[1]
-
-    # Ability Type
-    new_type = input(
-        f"Update Ability Type [{ability[2]}]: "
-    ).strip()
-
-    if new_type == "":
-        new_type = ability[2]
-
-    # Description
-    new_description = input(
-        f"Update Description [{ability[3]}]: "
-    ).strip()
-
-    if new_description == "":
-        new_description = ability[3]
+    new_name = input(f"Update Ability Name [{ability[1]}]: ").strip() or ability[1]
+    new_type = input(f"Update Ability Type [{ability[2]}]: ").strip() or ability[2]
+    new_description = input(f"Update Description [{ability[3]}]: ").strip() or ability[3]
 
     cursor.execute("""
         UPDATE CardAbility
-        SET AbilityName = ?,
-            AbilityType = ?,
-            Description = ?
-        WHERE AbilityID = ?
-    """, (
-        new_name,
-        new_type,
-        new_description,
-        ability_id
-    ))
+        SET AbilityName = ?, AbilityType = ?, Description = ?
+        WHERE AbilityID = ? AND CardID = ?
+    """, (new_name, new_type, new_description, ability_id, card_id))
 
-    conn.commit()
-
+    if commit:
+        conn.commit()
     print(f"\nAbility {ability_id} updated successfully!")
     pause_screen()
+    return True
 
 
-
-def add_attack(card_id):
-
-    cursor.execute("""
-        SELECT AttackID
-        FROM AttackDetails
-        WHERE CardID = ?
-    """, (card_id,))
-
-    attacks = cursor.fetchall()
-
-    if not attacks:
-        next_number = 1
-    else:
-        numbers = []
-
-        for attack in attacks:
-            attack_id = attack[0]
-            number = int(attack_id.split("-AT")[1])
-            numbers.append(number)
-
-        next_number = max(numbers) + 1
-
-    attack_id = f"{card_id}-AT{next_number}"
-
-    while True:
-        attack_name = input("Attack Name: ").strip()
-
-        if attack_name != "":
-            break
-
-        print("Attack Name cannot be blank.")
-
-    while True:
-        damage = input("Damage: ").strip()
-
-        if damage != "":
-            break
-
-        print("Damage cannot be blank.")
-
-    while True:
-        energy_cost = input("Energy Cost: ").strip()
-
-        if energy_cost != "":
-            break
-
-        print("Energy Cost cannot be blank.")
-
+def add_attack(card_id, commit=True):
+    attack_id = _get_next_child_id(card_id, "AttackDetails", "AttackID", "AT")
+    attack_name = _ask_non_empty("Attack Name: ")
+    damage = _ask_non_empty("Damage: ")
+    energy_cost = _ask_non_empty("Energy Cost: ")
     effect = input("Effect: ").strip()
 
     cursor.execute("""
         INSERT INTO AttackDetails
         (AttackID, CardID, AttackName, Damage, EnergyCost, Effect)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        attack_id,
-        card_id,
-        attack_name,
-        damage,
-        energy_cost,
-        effect
-    ))
+    """, (attack_id, card_id, attack_name, damage, energy_cost, effect))
 
-    conn.commit()
-
+    if commit:
+        conn.commit()
     print(f"\nAttack {attack_id} added successfully!")
+    return True
 
 
-
-def add_ability(card_id):
-
-    cursor.execute("""
-        SELECT AbilityID
-        FROM CardAbility
-        WHERE CardID = ?
-    """, (card_id,))
-
-    abilities = cursor.fetchall()
-
-    if not abilities:
-        next_number = 1
-    else:
-        numbers = []
-
-        for ability in abilities:
-            ability_id = ability[0]
-            number = int(ability_id.split("-AB")[1])
-            numbers.append(number)
-
-        next_number = max(numbers) + 1
-
-    ability_id = f"{card_id}-AB{next_number}"
-
-    while True:
-        ability_name = input("Ability Name: ").strip()
-
-        if ability_name != "":
-            break
-
-        print("Ability Name cannot be blank.")
-
+def add_ability(card_id, commit=True):
+    ability_id = _get_next_child_id(card_id, "CardAbility", "AbilityID", "AB")
+    ability_name = _ask_non_empty("Ability Name: ")
     ability_type = input("Ability Type: ").strip()
     description = input("Description: ").strip()
 
@@ -2798,18 +2612,12 @@ def add_ability(card_id):
         INSERT INTO CardAbility
         (AbilityID, CardID, AbilityName, AbilityType, Description)
         VALUES (?, ?, ?, ?, ?)
-    """, (
-        ability_id,
-        card_id,
-        ability_name,
-        ability_type,
-        description
-    ))
+    """, (ability_id, card_id, ability_name, ability_type, description))
 
-    conn.commit()
-
+    if commit:
+        conn.commit()
     print(f"\nAbility {ability_id} added successfully!")
-
+    return True
 
 
 def create_card():
@@ -2818,7 +2626,6 @@ def create_card():
         print("-" * 60)
         print("                     Create Card")
         print("-" * 60)
-
         category = input("""
 [1] Create Creature Card
 [2] Create Trainer Card
@@ -2828,345 +2635,211 @@ def create_card():
 Select an option: """).strip()
 
         if category == "0":
-            break
-
-        elif category not in ["1", "2", "3"]:
+            return
+        if category not in VALID_CARD_TYPES:
             print("Invalid option.")
             pause_screen()
             continue
 
-        type_map = {
-            "1": "Creature Card",
-            "2": "Trainer Card",
-            "3": "Energy Card"
-        }
+        card_type = VALID_CARD_TYPES[category]
+        card_id = _get_next_card_id()
 
-        card_type = type_map[category]
-
-        # ==========================================
-        # GENERATE CARD ID
-        # ==========================================
-
-        cursor.execute("SELECT MAX(CardID) FROM Card;")
-        result = cursor.fetchone()
-
-        if result[0] is None:
-            next_number = 1
-        else:
-            next_number = int(result[0][1:]) + 1
-
-        card_id = f"C{next_number:03d}"
-
-        # ==========================================
-        # CARD NAME
-        # ==========================================
-
-        while True:
-            card_name = input("Card Name: ").strip()
-
-            if card_name == "":
-                print("Card Name cannot be blank.")
-                continue
-
-            cursor.execute("""
-                SELECT CardID
-                FROM Card
-                WHERE CardName = ?
-            """, (card_name,))
-
-            if cursor.fetchone():
+        try:
+            card_name = _ask_non_empty("Card Name: ")
+            while True:
+                cursor.execute("SELECT CardID FROM Card WHERE CardName = ?", (card_name,))
+                if not cursor.fetchone():
+                    break
                 print("A card with that name already exists.")
-            else:
-                break
+                card_name = _ask_non_empty("Card Name: ")
 
-        # ==========================================
-        # SET ID
-        # ==========================================
+            while True:
+                set_id = _ask_non_empty("Set ID: ")
+                cursor.execute("SELECT SetID FROM CardSet WHERE SetID = ?", (set_id,))
+                if cursor.fetchone():
+                    break
+                print("Invalid Set ID.")
 
-        while True:
-            set_id = input("Set ID: ").strip()
+            while True:
+                card_number = _ask_non_empty("Card Number: ")
+                cursor.execute("""
+                    SELECT CardID FROM Card
+                    WHERE CardNumber = ? AND SetID = ?
+                """, (card_number, set_id))
+                if not cursor.fetchone():
+                    break
+                print("A card with that number already exists in this set.")
 
-            cursor.execute("""
-                SELECT SetID
-                FROM CardSet
-                WHERE SetID = ?
-            """, (set_id,))
-
-            if cursor.fetchone():
-                break
-
-            print("Invalid Set ID.")
-
-        # ==========================================
-        # CARD NUMBER
-        # ==========================================
-
-        while True:
-            card_number = input("Card Number: ").strip()
-
-            if card_number == "":
-                print("Card Number cannot be blank.")
-                continue
+            rarity = _ask_rarity()
 
             cursor.execute("""
-                SELECT CardID
-                FROM Card
-                WHERE CardNumber = ?
-            """, (card_number,))
+                INSERT INTO Card (CardID, SetID, CardName, CardType, CardNumber, Rarity)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (card_id, set_id, card_name, card_type, card_number, rarity))
 
-            if cursor.fetchone():
-                print("A card with that number already exists.")
+            if category == "1":
+                evolution = input("Evolution Stage: ").strip()
+                while True:
+                    hp = input("HP: ").strip()
+                    if hp.isdigit() and int(hp) > 0:
+                        hp = int(hp)
+                        break
+                    print("HP must be a positive number.")
+
+                element = _ask_non_empty("Element Type: ")
+                while True:
+                    retreat_cost = input("Retreat Cost: ").strip()
+                    if retreat_cost.isdigit() and int(retreat_cost) >= 0:
+                        retreat_cost = int(retreat_cost)
+                        break
+                    print("Retreat Cost must be a non-negative number.")
+
+                weakness = input("Weakness: ").strip()
+                resistance = input("Resistance: ").strip()
+                cursor.execute("""
+                    INSERT INTO CreatureCard
+                    (CardID, EvolutionStage, HP, ElementType, RetreatCost, Weakness, Resistance)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (card_id, evolution, hp, element, retreat_cost, weakness, resistance))
+
+            elif category == "2":
+                subtype = input("Subtype: ").strip()
+                rules = input("Rules: ").strip()
+                cursor.execute("""
+                    INSERT INTO TrainerCard (CardID, Subtype, Rules)
+                    VALUES (?, ?, ?)
+                """, (card_id, subtype, rules))
+
             else:
-                break
+                element = _ask_non_empty("Element Type: ")
+                energy_type = _ask_non_empty("Energy Type: ")
+                special_effects = input("Special Effects: ").strip()
+                cursor.execute("""
+                    INSERT INTO EnergyCard (CardID, ElementType, EnergyType, SpecialEffects)
+                    VALUES (?, ?, ?, ?)
+                """, (card_id, element, energy_type, special_effects))
 
-        # ==========================================
-        # RARITY
-        # ==========================================
+            # Keep the card and its subtype in one transaction.
+            conn.commit()
+            print(f"\nCard {card_id} created successfully!")
 
-        while True:
-            rarity = input("Rarity: ").strip()
-
-            if rarity != "":
-                break
-
-            print("Rarity cannot be blank.")
-
-        # ==========================================
-        # INSERT CARD
-        # ==========================================
-
-        cursor.execute("""
-            INSERT INTO Card
-            (CardID, SetID, CardName, CardType, CardNumber, Rarity)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            card_id,
-            set_id,
-            card_name,
-            card_type,
-            card_number,
-            rarity
-        ))
-
-        # ==========================================
-        # CREATURE CARD
-        # ==========================================
+        except (sqlite3.Error, ValueError) as error:
+            conn.rollback()
+            print("\nCard creation failed. No changes were saved.")
+            print(f"Reason: {error}")
+            pause_screen()
+            continue
 
         if category == "1":
-
-            evolution = input("Evolution Stage: ").strip()
-
             while True:
-                hp = input("HP: ").strip()
-
-                if hp.isdigit() and int(hp) > 0:
-                    hp = int(hp)
+                choice = input("\nWould you like to add an attack? (y/n): ").strip().lower()
+                if choice == "n":
                     break
-
-                print("HP must be a positive number.")
-
-            element = input("Element Type: ").strip()
-
-            while True:
-                retreat_cost = input("Retreat Cost: ").strip()
-
-                if retreat_cost.isdigit() and int(retreat_cost) >= 0:
-                    retreat_cost = int(retreat_cost)
-                    break
-
-                print("Retreat Cost must be a number.")
-
-            weakness = input("Weakness: ").strip()
-            resistance = input("Resistance: ").strip()
-
-            cursor.execute("""
-                INSERT INTO CreatureCard
-                (CardID, EvolutionStage, HP, ElementType,
-                 RetreatCost, Weakness, Resistance)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                card_id,
-                evolution,
-                hp,
-                element,
-                retreat_cost,
-                weakness,
-                resistance
-            ))
-
-        # ==========================================
-        # TRAINER CARD
-        # ==========================================
-
-        elif category == "2":
-
-            subtype = input("Subtype: ").strip()
-            rules = input("Rules: ").strip()
-
-            cursor.execute("""
-                INSERT INTO TrainerCard
-                (CardID, Subtype, Rules)
-                VALUES (?, ?, ?)
-            """, (
-                card_id,
-                subtype,
-                rules
-            ))
-
-        # ==========================================
-        # ENERGY CARD
-        # ==========================================
-
-        elif category == "3":
-
-            element = input("Element Type: ").strip()
-            energy_type = input("Energy Type: ").strip()
-            special_effects = input("Special Effects: ").strip()
-
-            cursor.execute("""
-                INSERT INTO EnergyCard
-                (CardID, ElementType, EnergyType, SpecialEffects)
-                VALUES (?, ?, ?, ?)
-            """, (
-                card_id,
-                element,
-                energy_type,
-                special_effects
-            ))
-
-        conn.commit()
-
-        print(f"\nCard {card_id} created successfully!")
-
-        # ==========================================
-        # ADD ATTACKS / ABILITIES
-        # ==========================================
-
-        if category == "1":
-
-            while True:
-                add_attack_choice = input("\nWould you like to add an attack? (y/n): ").strip().lower()
-
-                if add_attack_choice == "y":
-                    add_attack(card_id)
-
+                if choice == "y":
                     while True:
-                        another_attack = input("\nWould you like to add another attack? (y/n): ").strip().lower()
-
-                        if another_attack == "y":
+                        try:
                             add_attack(card_id)
-                        elif another_attack == "n":
+                        except sqlite3.Error as error:
+                            conn.rollback()
+                            print(f"Could not add attack: {error}")
+                        more = input("\nWould you like to add another attack? (y/n): ").strip().lower()
+                        if more == "n":
                             break
-                        else:
+                        if more != "y":
                             print("Please enter y or n.")
-
                     break
-
-                elif add_attack_choice == "n":
-                    break
-
-                else:
-                    print("Please enter y or n.")
+                print("Please enter y or n.")
 
             while True:
-                add_ability_choice = input("\nWould you like to add an ability? (y/n): ").strip().lower()
-
-                if add_ability_choice == "y":
-                    add_ability(card_id)
-
+                choice = input("\nWould you like to add an ability? (y/n): ").strip().lower()
+                if choice == "n":
+                    break
+                if choice == "y":
                     while True:
-                        another_ability = input("\nWould you like to add another ability? (y/n): ").strip().lower()
-
-                        if another_ability == "y":
+                        try:
                             add_ability(card_id)
-                        elif another_ability == "n":
+                        except sqlite3.Error as error:
+                            conn.rollback()
+                            print(f"Could not add ability: {error}")
+                        more = input("\nWould you like to add another ability? (y/n): ").strip().lower()
+                        if more == "n":
                             break
-                        else:
+                        if more != "y":
                             print("Please enter y or n.")
-
                     break
-
-                elif add_ability_choice == "n":
-                    break
-
-                else:
-                    print("Please enter y or n.")
+                print("Please enter y or n.")
 
         pause_screen()
-        break
-
+        return
 
 
 def delete_card():
-    """
-    Safely removes a card entry by wiping all child foreign key 
-    dependencies before deleting the master card record.
-    """
     print("\n------------------- Delete Card -------------------")
-    card_id = input("Enter the Card ID you wish to delete: ").strip()
-
-    # Step 1: Verify the card actually exists in the database
-    cursor.execute("SELECT CardName, CardType FROM Card WHERE CardID = ?", (card_id,))
-    card = cursor.fetchone()
-    
-    if not card:
-        print(f"Error: No card found with ID '{card_id}'.")
+    card_id = input("Enter the Card ID you wish to delete (or type 'back'): ").strip()
+    if card_id.lower() == "back":
         return
 
-    card_name, card_type = card[2], card[3]
+    cursor.execute(
+        "SELECT CardName, CardType FROM Card WHERE CardID = ?", (card_id,)
+    )
+    card = cursor.fetchone()
+    if not card:
+        print(f"Error: No card found with ID '{card_id}'.")
+        pause_screen()
+        return
 
-    # Step 2: Gather stats from child tables to alert the administrator
-    cursor.execute("SELECT SUM(Quantity) FROM PlayerCollection WHERE CardID = ?", (card_id,))
-    count_collection = cursor.fetchone()[0] or 0
-
-    cursor.execute("SELECT SUM(Quantity) FROM CardInDeck WHERE CardID = ?", (card_id,))
-    count_decks = cursor.fetchone()[0] or 0
-
+    card_name, card_type = card
+    cursor.execute(
+        "SELECT COALESCE(SUM(Quantity), 0) FROM PlayerCollection WHERE CardID = ?",
+        (card_id,)
+    )
+    count_collection = cursor.fetchone()[0]
+    cursor.execute(
+        "SELECT COALESCE(SUM(Quantity), 0) FROM CardInDeck WHERE CardID = ?",
+        (card_id,)
+    )
+    count_decks = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(*) FROM TradeCard WHERE CardID = ?", (card_id,))
-    count_trades = cursor.fetchone()[0] or 0
+    count_trades = cursor.fetchone()[0]
 
-    # Step 3: Present confirmation prompt if data is attached
-    if count_collection > 0 or count_decks > 0 or count_trades > 0:
-        print(f"\n[⚠️ CRITICAL SYSTEM WARNING]")
-        print(f"Card Name: '{card_name}' (Type: {card_type})")
-        print(f"• Linked in Player Inventories : {count_collection} copies")
-        print(f"• Attached to active Player Decks : {count_decks} copies")
-        print(f"• Flagged in open/past Trade Offers : {count_trades} records")
-        
-        confirm = input("\nThis action is irreversible. Wipe all dependencies and proceed? (yes/no): ").lower().strip()
-        if confirm != "yes":
-            print("Deletion aborted. No changes were made to the database.")
-            return
+    print("\n[WARNING]")
+    print(f"Card Name: '{card_name}' (Type: {card_type})")
+    print(f"Linked in Player Inventories: {count_collection} copies")
+    print(f"Attached to Player Decks: {count_decks} copies")
+    print(f"Linked to Trade Offers: {count_trades} records")
+
+    confirm = input("\nThis action is irreversible. Delete this card and its dependencies? (yes/no): ").strip().lower()
+    if confirm != "yes":
+        print("Deletion aborted. No changes were made to the database.")
+        pause_screen()
+        return
 
     try:
-        # Step 4: Delete from cross-reference / transaction junction tables
-        cursor.execute("DELETE FROM CardInDeck WHERE CardID = ?", (card_id,))
-        cursor.execute("DELETE FROM PlayerCollection WHERE CardID = ?", (card_id,))
-        cursor.execute("DELETE FROM TradeCard WHERE CardID = ?", (card_id,))
+        # Delete children before parent so this works even without ON DELETE CASCADE.
+        for table in (
+            "CardInDeck", "PlayerCollection", "TradeCard",
+            "CardAbility", "AttackDetails", "CreatureCard",
+            "TrainerCard", "EnergyCard"
+        ):
+            cursor.execute(f"DELETE FROM {table} WHERE CardID = ?", (card_id,))
 
-        # Step 5: Delete from component / attribute sub-tables
-        cursor.execute("DELETE FROM CardAbility WHERE CardID = ?", (card_id,))
-        cursor.execute("DELETE FROM AttackDetails WHERE CardID = ?", (card_id,))
-
-        # Step 6: Delete from card identity sub-type tables
-        cursor.execute("DELETE FROM CreatureCard WHERE CardID = ?", (card_id,))
-        cursor.execute("DELETE FROM TrainerCard WHERE CardID = ?", (card_id,))
-        cursor.execute("DELETE FROM EnergyCard WHERE CardID = ?", (card_id,))
-
-        # Step 7: Delete the root master record from the main Card table
         cursor.execute("DELETE FROM Card WHERE CardID = ?", (card_id,))
+        if cursor.rowcount != 1:
+            raise sqlite3.Error("Card could not be deleted.")
 
-        # Commit everything to the database in a single transaction blocks
         conn.commit()
-        print(f"\nSuccess! '{card_name}' (ID: {card_id}) and all references completely removed.")
+        print(f"\nSuccess! '{card_name}' (ID: {card_id}) and its references were removed.")
 
     except sqlite3.Error as error:
         conn.rollback()
-        print(f"\n[DATABASE ERROR] Deletion failed. Transaction rolled back safely.")
+        print("\n[DATABASE ERROR] Deletion failed. Transaction rolled back safely.")
         print(f"Reason: {error}")
 
+    pause_screen()
 
 
+
+# Manage decks: handles manage decks for the system.
 def manage_decks():
     if user_position in ["Administrator", "Moderator"]:
         clear_screen()
@@ -3175,195 +2848,277 @@ def manage_decks():
         print("-" * 75)
         print("  [1] View all cards in a Deck")
         print("  [2] View all decks containing a specific card")
-        print("  [0] Back to Main Menu  ")
+        print("  [0] Back to Main Menu")
         print("")
         return input("\nSelect an option: ").strip()
+
     elif user_position == "Staff":
-        return
+        return "0"
+
+    return "0"
 
 
-
+# View deck cards: handles viewing all cards in a deck.
 def view_deck_cards():
+    rarity_order = """
+        CASE
+            WHEN UPPER(Card.Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
+            WHEN UPPER(Card.Rarity) LIKE '%ILLUSTRATION RARE%' THEN 2
+            WHEN UPPER(Card.Rarity) LIKE '%HYPER RARE%' THEN 3
+            WHEN UPPER(Card.Rarity) LIKE '%ULTRA RARE%' THEN 4
+            WHEN UPPER(Card.Rarity) LIKE '%ACE SPEC%' THEN 5
+            WHEN UPPER(Card.Rarity) LIKE '%DOUBLE RARE%' THEN 6
+            WHEN UPPER(Card.Rarity) LIKE '%RARE HOLO%' THEN 7
+            WHEN UPPER(Card.Rarity) LIKE '%RARE%' THEN 8
+            WHEN UPPER(Card.Rarity) LIKE '%UNCOMMON%' THEN 9
+            WHEN UPPER(Card.Rarity) LIKE '%COMMON%' THEN 10
+            ELSE 11
+        END ASC
+    """
+
     while True:
         clear_screen()
         print("-" * 60)
         print("                     View Cards in a Deck")
         print("-" * 60)
-        category = input("Seach by Deck 'Name' or 'ID' (or type 'back')").strip().lower()
-        
+
+        category = input(
+            "Search by Deck 'Name' or 'ID' (or type 'back'): "
+        ).strip().lower()
+
         if category == "back":
             break
-        elif category == "id":
-            while True:
-                deck_id = input("Enter Deck ID:")
-                cursor.execute("SELECT * FROM Deck WHERE DeckID = ?", (deck_id,))
-                deck = cursor.fetchone()
-                if deck:
 
-                    cursor.execute("""
-                    SELECT Deck.DeckID, Deck.DeckName, Player.Username, 
-                    SUM(CardInDeck.Quantity) AS 'Total Cards In Deck',
-                    COUNT(CardInDeck.CardID) AS 'Number of Unique Cards', 
-                    SUM(CASE WHEN Card.CardType = 'Creature Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Creature Cards',
-                    SUM(CASE WHEN Card.CardType = 'Trainer Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Trainer Cards',
-                    SUM(CASE WHEN Card.CardType = 'Energy Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Energy Cards'
-                    FROM Deck
-                    JOIN Player ON Player.PlayerID = Deck.PlayerID
-                    JOIN CardInDeck ON CardInDeck.DeckID = Deck.DeckID
-                    JOIN Card ON Card.CardID = CardInDeck.CardID
-                    WHERE Deck.deckid = ?
-                    GROUP BY Deck.DeckID, Deck.DeckName, Player.Username;""", (deck_id,))
-
-                    deck_stats = cursor.fetchone()
-                    print_as_table(cursor, deck_stats)
-
-                    cursor.execute("""
-                    SELECT Card.CardID, CardName, Rarity 
-                    FROM Card 
-                    JOIN CardInDeck ON CardInDeck.CardID = Card.CardID
-                    WHERE CardInDeck.DeckID = ?
-                    ORDER BY CASE 
-                                WHEN UPPER(Card.Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
-                                WHEN UPPER(Card.Rarity) LIKE '%ILLUSTRATION RARE%'   THEN 2
-                                WHEN UPPER(Card.Rarity) LIKE '%HYPER RARE%'          THEN 3
-                                WHEN UPPER(Card.Rarity) LIKE '%ULTRA RARE%'          THEN 4
-                                WHEN UPPER(Card.Rarity) LIKE '%ACE SPEC%'            THEN 5
-                                WHEN UPPER(Card.Rarity) LIKE '%DOUBLE RARE%'         THEN 6
-                                WHEN UPPER(Card.Rarity) LIKE '%RARE HOLO%'           THEN 7
-                                WHEN UPPER(Card.Rarity) LIKE '%RARE%'                THEN 8
-                                WHEN UPPER(Card.Rarity) LIKE '%UNCOMMON%'            THEN 9
-                                WHEN UPPER(Card.Rarity) LIKE '%COMMON%'              THEN 10
-                                ELSE 11
-                            END ASC;""", (deck_id,))
-
-                    cards = cursor.fetchall()
-                    print_as_table(cursor, cards)
-                    pause_screen()
-                    break
-
-                else:
-                    print("\nDeck not found, try again.")
-                    pause_screen()
-                    clear_screen()
-        
-        elif category == "name":
-            while True:
-                deck_name = input("Enter Deck Name:")
-                cursor.execute("SELECT * FROM Deck WHERE DeckName = ?", (deck_name,))
-                deck = cursor.fetchone()
-                if deck:
-
-                    cursor.execute("""
-                    SELECT Deck.DeckID, Deck.DeckName, Player.Username, 
-                    SUM(CardInDeck.Quantity) AS 'Total Cards In Deck',
-                    COUNT(CardInDeck.CardID) AS 'Number of Unique Cards', 
-                    SUM(CASE WHEN Card.CardType = 'Creature Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Creature Cards',
-                    SUM(CASE WHEN Card.CardType = 'Trainer Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Trainer Cards',
-                    SUM(CASE WHEN Card.CardType = 'Energy Card' THEN CardInDeck.Quantity ELSE 0 END) AS 'Energy Cards'
-                    FROM Deck
-                    JOIN Player ON Player.PlayerID = Deck.PlayerID
-                    JOIN CardInDeck ON CardInDeck.DeckID = Deck.DeckID
-                    JOIN Card ON Card.CardID = CardInDeck.CardID
-                    WHERE Deck.DeckName = ?
-                    GROUP BY Deck.DeckID, Deck.DeckName, Player.Username;""", (deck_name,))
-
-                    deck_stats = cursor.fetchone()
-                    print_as_table(cursor, deck_stats)
-
-                    cursor.execute("""
-                    SELECT Card.CardID, CardName, Rarity 
-                    FROM Card 
-                    JOIN CardInDeck ON CardInDeck.CardID = Card.CardID
-                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
-                    WHERE Deck.DeckName = ?
-                    ORDER BY CASE 
-                                WHEN UPPER(Card.Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
-                                WHEN UPPER(Card.Rarity) LIKE '%ILLUSTRATION RARE%'   THEN 2
-                                WHEN UPPER(Card.Rarity) LIKE '%HYPER RARE%'          THEN 3
-                                WHEN UPPER(Card.Rarity) LIKE '%ULTRA RARE%'          THEN 4
-                                WHEN UPPER(Card.Rarity) LIKE '%ACE SPEC%'            THEN 5
-                                WHEN UPPER(Card.Rarity) LIKE '%DOUBLE RARE%'         THEN 6
-                                WHEN UPPER(Card.Rarity) LIKE '%RARE HOLO%'           THEN 7
-                                WHEN UPPER(Card.Rarity) LIKE '%RARE%'                THEN 8
-                                WHEN UPPER(Card.Rarity) LIKE '%UNCOMMON%'            THEN 9
-                                WHEN UPPER(Card.Rarity) LIKE '%COMMON%'              THEN 10
-                                ELSE 11
-                            END ASC;""", (deck_name,))
-
-                    cards = cursor.fetchall()
-                    print_as_table(cursor, cards)
-                    pause_screen()
-                    break
-
-                else:
-                    print("\nDeck not found, try again.")
-                    pause_screen()
-                    clear_screen()
-        else:
-            print("Invalid option")
+        if category not in ["id", "name"]:
+            print("Invalid option. Enter 'id', 'name' or 'back'.")
             pause_screen()
+            continue
 
-                    
-                    
+        while True:
+            if category == "id":
+                deck_id = input("Enter Deck ID (or type 'back'): ").strip()
+
+                if deck_id.lower() == "back":
+                    break
+
+                cursor.execute(
+                    "SELECT DeckID, DeckName, PlayerID FROM Deck WHERE DeckID = ?",
+                    (deck_id,)
+                )
+                deck = cursor.fetchone()
+
+                if not deck:
+                    print("\nDeck not found, try again.")
+                    pause_screen()
+                    continue
+
+                where_clause = "Deck.DeckID = ?"
+                search_value = deck_id
+
+            else:
+                deck_name = input(
+                    "Enter Deck Name (or type 'back'): "
+                ).strip()
+
+                if deck_name.lower() == "back":
+                    break
+
+                cursor.execute(
+                    "SELECT DeckID, DeckName, PlayerID FROM Deck WHERE DeckName = ?",
+                    (deck_name,)
+                )
+                deck = cursor.fetchone()
+
+                if not deck:
+                    print("\nDeck not found, try again.")
+                    pause_screen()
+                    continue
+
+                where_clause = "Deck.DeckID = ?"
+                search_value = deck[0]
+
+            # Get deck statistics.
+            # LEFT JOIN allows an empty deck to still be found and displayed.
+            cursor.execute(f"""
+                SELECT
+                    Deck.DeckID,
+                    Deck.DeckName,
+                    Player.Username,
+                    COALESCE(SUM(CardInDeck.Quantity), 0) AS 'Total Cards In Deck',
+                    COUNT(DISTINCT CardInDeck.CardID) AS 'Number of Unique Cards',
+                    COALESCE(SUM(
+                        CASE
+                            WHEN Card.CardType = 'Creature Card'
+                            THEN CardInDeck.Quantity
+                            ELSE 0
+                        END
+                    ), 0) AS 'Creature Cards',
+                    COALESCE(SUM(
+                        CASE
+                            WHEN Card.CardType = 'Trainer Card'
+                            THEN CardInDeck.Quantity
+                            ELSE 0
+                        END
+                    ), 0) AS 'Trainer Cards',
+                    COALESCE(SUM(
+                        CASE
+                            WHEN Card.CardType = 'Energy Card'
+                            THEN CardInDeck.Quantity
+                            ELSE 0
+                        END
+                    ), 0) AS 'Energy Cards'
+                FROM Deck
+                JOIN Player ON Player.PlayerID = Deck.PlayerID
+                LEFT JOIN CardInDeck ON CardInDeck.DeckID = Deck.DeckID
+                LEFT JOIN Card ON Card.CardID = CardInDeck.CardID
+                WHERE {where_clause}
+                GROUP BY Deck.DeckID, Deck.DeckName, Player.Username
+            """, (search_value,))
+
+            deck_stats = cursor.fetchone()
+
+            if deck_stats:
+                print("\nDeck Information:")
+                print_as_table(cursor, [deck_stats])
+
+            # Get cards in the deck.
+            cursor.execute(f"""
+                SELECT
+                    Card.CardID,
+                    Card.CardName,
+                    Card.CardType,
+                    Card.CardNumber,
+                    Card.Rarity,
+                    CardInDeck.Quantity
+                FROM Card
+                JOIN CardInDeck ON CardInDeck.CardID = Card.CardID
+                WHERE CardInDeck.DeckID = ?
+                ORDER BY {rarity_order}, Card.CardName ASC
+            """, (search_value,))
+
+            cards = cursor.fetchall()
+
+            if cards:
+                print("\nCards in Deck:")
+                print_as_table(cursor, cards)
+            else:
+                print("\nThis deck contains no cards.")
+
+            pause_screen()
+            break
+
+
+# View all decks containing a specific card.
 def view_all_decks_containing_specific_card():
     while True:
         clear_screen()
         print("-" * 60)
-        print("                     View All Decks Containing A Specific Card")
+        print("             View All Decks Containing A Specific Card")
         print("-" * 60)
-        category = input("Seach for Card by 'Name' or 'ID' (or type 'back')").strip().lower()
+
+        category = input(
+            "Search for Card by 'Name' or 'ID' (or type 'back'): "
+        ).strip().lower()
 
         if category == "back":
             break
-        elif category == "id":
-            while True:
-                card_id = input("Enter Card ID:")
-                cursor.execute("SELECT * FROM Card WHERE CardID = ?", (card_id,))
-                card = cursor.fetchone()
-                if card:
-                    cursor.execute("""
-                    SELECT Deck.DeckID, Deck.DeckName, CardInDeck.Quantity  
-                    FROM CardInDeck
-                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
-                    WHERE CardInDeck.CardID = ?""", (card_id,))
-                    decks = cursor.fetchall()
-                    if decks:
-                        print_as_table(cursor, decks)
-                        pause_screen()
-                    else:
-                        print("\n No decks contain this card")
-                        pause_screen()
-                else:
-                    print("\nCard not found")
-                    pause_screen()
 
-
-        elif category == "name":
-            while True:
-                card_name = input("Enter Card Name:")
-                cursor.execute("SELECT * FROM Card WHERE CardName = ?", (card_name,))
-                card = cursor.fetchone()
-                if card:
-                    cursor.execute("""
-                    SELECT Deck.DeckID, Deck.DeckName, CardInDeck.Quantity  
-                    FROM CardInDeck
-                    JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
-                    JOIN Card ON CardInDeck.CardID = Card.CardID
-                    WHERE Card.CardName = ?""", (card_name,))
-                    decks = cursor.fetchall()
-                    if decks:
-                        print_as_table(cursor, decks)
-                        pause_screen()
-                    else:
-                        print("\n No decks contain this card")
-                        pause_screen()
-                else:
-                    print("\nCard not found")
-                    pause_screen()
-        else:
-            print("Enter 'id', 'name' or 'Back'")
+        if category not in ["id", "name"]:
+            print("Invalid option. Enter 'id', 'name' or 'back'.")
             pause_screen()
+            continue
 
+        while True:
+            if category == "id":
+                card_id = input(
+                    "Enter Card ID (or type 'back'): "
+                ).strip()
+
+                if card_id.lower() == "back":
+                    break
+
+                cursor.execute(
+                    "SELECT CardID, CardName FROM Card WHERE CardID = ?",
+                    (card_id,)
+                )
+                card = cursor.fetchone()
+
+                if not card:
+                    print("\nCard not found.")
+                    pause_screen()
+                    continue
+
+                search_value = card_id
+                where_clause = "CardInDeck.CardID = ?"
+
+            else:
+                card_name = input(
+                    "Enter Card Name (or type 'back'): "
+                ).strip()
+
+                if card_name.lower() == "back":
+                    break
+
+                # Use fetchall because multiple cards with the same name
+                # are possible in different sets.
+                cursor.execute(
+                    "SELECT CardID, CardName FROM Card WHERE CardName = ?",
+                    (card_name,)
+                )
+                matching_cards = cursor.fetchall()
+
+                if not matching_cards:
+                    print("\nCard not found.")
+                    pause_screen()
+                    continue
+
+                if len(matching_cards) > 1:
+                    print("\nMultiple cards have that name:")
+                    print_as_table(cursor, matching_cards)
+
+                    selected_id = input(
+                        "Enter the Card ID you want to search for (or type 'back'): "
+                    ).strip()
+
+                    if selected_id.lower() == "back":
+                        break
+
+                    valid_ids = [card[0] for card in matching_cards]
+
+                    if selected_id not in valid_ids:
+                        print("Invalid Card ID.")
+                        pause_screen()
+                        continue
+
+                    search_value = selected_id
+                    where_clause = "CardInDeck.CardID = ?"
+                else:
+                    search_value = matching_cards[0][0]
+                    where_clause = "CardInDeck.CardID = ?"
+
+            cursor.execute(f"""
+                SELECT
+                    Deck.DeckID,
+                    Deck.DeckName,
+                    Player.Username,
+                    CardInDeck.Quantity
+                FROM CardInDeck
+                JOIN Deck ON CardInDeck.DeckID = Deck.DeckID
+                JOIN Player ON Player.PlayerID = Deck.PlayerID
+                WHERE {where_clause}
+                ORDER BY Deck.DeckName ASC
+            """, (search_value,))
+
+            decks = cursor.fetchall()
+
+            if decks:
+                print("\nDecks containing this card:")
+                print_as_table(cursor, decks)
+            else:
+                print("\nNo decks contain this card.")
+
+            pause_screen()
+            break
 
 
 def manage_staff():
@@ -3373,180 +3128,306 @@ def manage_staff():
         print("                     Manage Staff Members")
         print("-" * 75)
         print("  [1] View Staff Details             [4] Delete Staff Member")
-        print("  [2] Edit Staff Details             [0] Back to Main Menu ")
+        print("  [2] Edit Staff Details             [0] Back to Main Menu")
         print("  [3] Create New Staff Member")
         print("")
+
         return input("\nSelect an option: ").strip()
-    elif user_position in ["Staff", "Moderator"]:
-        return
+
+    # Staff and Moderators do not have access to staff management.
+    return "0"
 
 
 
 def view_staff_details():
-    clear_screen()
     while True:
+        clear_screen()
         print("-" * 90)
-        print("                            View Staff Details")
+        print("                         View Staff Details")
         print("-" * 90)
-        print("  [1] View all Staff Details             [3] search for specific staff member by id or username")
-        print("  [2] Search for staff members by role   [0] Back to Main Menu ")
-        choice = input("").strip()
+        print("  [1] View all Staff Details")
+        print("  [2] Search for Staff Members by Role")
+        print("  [3] Search for Staff Member by ID or Username")
+        print("  [0] Back to Main Menu")
+        print("")
+
+        choice = input("Select an option: ").strip()
 
         if choice == "0":
             break
 
         elif choice == "1":
-            cursor.execute("SELECT * FROM Staff ORDER BY Position ASC, StaffID ASC")
+            cursor.execute("""
+                SELECT *
+                FROM Staff
+                ORDER BY Position ASC, StaffID ASC
+            """)
+
             staff = cursor.fetchall()
-            print_as_table(cursor, staff)
+
+            if staff:
+                print_as_table(cursor, staff)
+            else:
+                print("\nNo staff members found.")
+
             pause_screen()
 
         elif choice == "2":
             while True:
-                role = input("Enter Staff role (or type 'back'): ").strip()
-                if role == "back":
+                role = input(
+                    "Enter Staff Role "
+                    "(Administrator/Moderator/Staff, or type 'back'): "
+                ).strip()
+
+                if role.lower() == "back":
                     break
-                elif role in ['Staff', 'Moderator', 'Administrator']:
-                    cursor.execute("SELECT * FROM Staff WHERE Position = ? ORDER BY FirstName", (role,))
-                    staff = cursor.fetchall()
-                    if staff:
-                        print_as_table(cursor, staff)
-                        pause_screen()
-                        break
-                    else:
-                        print("No staff members found with that role. Please try again.")
-                        pause_screen()
-                else:
-                    print("invalid role entered.")
+
+                # Make role matching case-insensitive for user input.
+                role_lookup = {
+                    "administrator": "Administrator",
+                    "moderator": "Moderator",
+                    "staff": "Staff"
+                }
+
+                role = role_lookup.get(role.lower())
+
+                if role is None:
+                    print(
+                        "\nInvalid role. Please enter "
+                        "Administrator, Moderator or Staff."
+                    )
+                    pause_screen()
+                    continue
+
+                cursor.execute("""
+                    SELECT *
+                    FROM Staff
+                    WHERE Position = ?
+                    ORDER BY FirstName ASC, LastName ASC, StaffID ASC
+                """, (role,))
+
+                staff = cursor.fetchall()
+
+                if staff:
+                    print_as_table(cursor, staff)
+                    pause_screen()
+                    break
+
+                print("\nNo staff members found with that role.")
+                pause_screen()
 
         elif choice == "3":
             while True:
-                search = input("Enter Staff ID or username (or type 'back'): ").strip().lower()
-                if role == "back":
-                    break
+                search = input(
+                    "Search by 'ID' or 'Username' "
+                    "(or type 'back'): "
+                ).strip().lower()
 
-                elif search == 'id':
+                if search == "back":
+                    break
+                if search == "id":
                     while True:
-                        staffid = input("Enter Staff ID (or back):").strip().upper()
-                        if staffid == "BACK":
+                        staff_id = input(
+                            "Enter Staff ID (or type 'back'): "
+                        ).strip().upper()
+
+                        if staff_id.lower() == "back":
                             break
-                        cursor.execute("SELECT * FROM Staff WHERE StaffID = ?", (staffid,))
-                        staff = cursor.one()
+
+                        cursor.execute("""
+                            SELECT *
+                            FROM Staff
+                            WHERE StaffID = ?
+                        """, (staff_id,))
+
+                        staff = cursor.fetchone()
+
                         if staff:
-                            print_as_table(cursor, staff)
+                            # print_as_table expects rows, so wrap
+                            # the single tuple in a list.
+                            print_as_table(cursor, [staff])
                             pause_screen()
                             break
-                        else:
-                            print("No staff member found with that ID. Please try again.")
-                            pause_screen()
-                elif search == 'username':
+
+                        print(
+                            "\nNo staff member found with that ID. "
+                            "Please try again."
+                        )
+                        pause_screen()
+
+                elif search == "username":
                     while True:
-                        staffuser = input("Enter Staff Username (or back):").strip().lower()
-                        if staffid == "back":
+                        username = input(
+                            "Enter Staff Username (or type 'back'): "
+                        ).strip()
+
+                        if username.lower() == "back":
                             break
-                        cursor.execute("SELECT * FROM Staff WHERE Username = ?", (staffuser,))
-                        staff = cursor.one()
+
+                        cursor.execute("""
+                            SELECT *
+                            FROM Staff
+                            WHERE Username = ?
+                        """, (username,))
+
+                        staff = cursor.fetchone()
+
                         if staff:
-                            print_as_table(cursor, staff)
+                            print_as_table(cursor, [staff])
                             pause_screen()
                             break
-                        else:
-                            print("No staff member found with that username. Please try again.")
-                            pause_screen()
+
+                        print(
+                            "\nNo staff member found with that username. "
+                            "Please try again."
+                        )
+                        pause_screen()
+
                 else:
-                    print("invalid role entered.")
+                    print(
+                        "\nInvalid option. Please enter "
+                        "'ID', 'Username' or 'back'."
+                    )
                     pause_screen()
+
+        else:
+            print("\nInvalid option. Please select 0, 1, 2 or 3.")
+            pause_screen()
 
 
 
 def edit_staff_details():
-    clear_screen()
-
     while True:
+        clear_screen()
         print("-" * 60)
         print("                  Edit Staff Details")
         print("-" * 60)
 
-        search = input("(type 'back' to go back)\nFind staff member to edit by ID or Username: ").strip().lower()
+        search = input(
+            "(type 'back' to go back)\n"
+            "Find staff member to edit by ID or Username: "
+        ).strip().lower()
 
         if search == "back":
             break
 
-        elif search == "id":
+        if search == "id":
             while True:
-                staff_id = input("Enter Staff ID (or type 'back'): ").strip().upper()
+                staff_id = input(
+                    "Enter Staff ID (or type 'back'): "
+                ).strip().upper()
 
                 if staff_id.lower() == "back":
                     break
 
-                cursor.execute("SELECT * FROM Staff WHERE StaffID = ?", (staff_id,))
+                cursor.execute("""
+                    SELECT *
+                    FROM Staff
+                    WHERE StaffID = ?
+                """, (staff_id,))
+
                 staff = cursor.fetchone()
 
                 if staff:
                     edit_staff_details_checks(staff, cursor)
                     break
-                else:
-                    print("\nNo staff member found with that ID. Please try again.")
-                    pause_screen()
+
+                print(
+                    "\nNo staff member found with that ID. "
+                    "Please try again."
+                )
+                pause_screen()
 
         elif search == "username":
             while True:
-                username = input("Enter Staff Username (or type 'back'): ").strip()
+                username = input(
+                    "Enter Staff Username (or type 'back'): "
+                ).strip()
 
                 if username.lower() == "back":
                     break
 
-                cursor.execute("SELECT * FROM Staff WHERE Username = ?", (username,))
+                cursor.execute("""
+                    SELECT *
+                    FROM Staff
+                    WHERE Username = ?
+                """, (username,))
+
                 staff = cursor.fetchone()
 
                 if staff:
                     edit_staff_details_checks(staff, cursor)
                     break
-                else:
-                    print("\nNo staff member found with that username. Please try again.")
-                    pause_screen()
+
+                print(
+                    "\nNo staff member found with that username. "
+                    "Please try again."
+                )
+                pause_screen()
 
         else:
-            print("\nInvalid search option. Please enter 'ID' or 'Username'.")
+            print(
+                "\nInvalid search option. "
+                "Please enter 'ID', 'Username' or 'back'."
+            )
             pause_screen()
-
-        clear_screen()
-
-
+=
 
 def edit_staff_details_checks(staff, cursor):
-    print_as_table(cursor, staff)
+    # Display the existing staff record.
+    print_as_table(cursor, [staff])
 
-    staffid = staff[0]
+    staff_id = staff[0]
 
     print("\nPlease enter the staff data you wish to change.")
-    print("If you do not wish to change anything, just press Enter.")
+    print("If you do not wish to change something, just press Enter.")
+    print("")
 
     while True:
-        new_firstname = input("Update First Name: ").strip()
+        new_firstname = input(
+            f"Update First Name [{staff[1]}]: "
+        ).strip()
 
         if new_firstname == "":
             new_firstname = staff[1]
             break
 
+        if not new_firstname.replace(" ", "").isalpha():
+            print("First name can only contain letters.")
+            continue
+
+        break
+
     while True:
-        new_lastname = input("Update Last Name: ").strip()
+        new_lastname = input(
+            f"Update Last Name [{staff[2]}]: "
+        ).strip()
 
         if new_lastname == "":
             new_lastname = staff[2]
             break
 
+        if not new_lastname.replace(" ", "").isalpha():
+            print("Last name can only contain letters.")
+            continue
+
+        break
+
     while True:
-        new_username = input("Update Username: ").strip()
+        new_username = input(
+            f"Update Username [{staff[3]}]: "
+        ).strip()
 
         if new_username == "":
             new_username = staff[3]
             break
+
         cursor.execute("""
             SELECT StaffID
             FROM Staff
-            WHERE Username = ? AND StaffID != ?
-        """, (new_username, staffid))
+            WHERE Username = ?
+              AND StaffID != ?
+        """, (new_username, staff_id))
 
         if cursor.fetchone():
             print("This username already exists.")
@@ -3554,93 +3435,166 @@ def edit_staff_details_checks(staff, cursor):
             break
 
     while True:
-        new_password = input("Update Password: ").strip()
+        new_password = input(
+            "Update Password (press Enter to keep current): "
+        ).strip()
 
         if new_password == "":
             new_password = staff[4]
             break
+
         if len(new_password) < 8:
             print("Password must be at least 8 characters long.")
             continue
+
         if not any(char.isupper() for char in new_password):
             print("Password must contain at least one uppercase letter.")
             continue
+
         if not any(char.islower() for char in new_password):
             print("Password must contain at least one lowercase letter.")
             continue
+
         if not any(not char.isalnum() for char in new_password):
-            print("Password must contain at least one symbol (e.g., !, @, #, $, etc.).")
+            print(
+                "Password must contain at least one symbol "
+                "(e.g., !, @, #, $)."
+            )
             continue
+
         break
 
     while True:
-        new_email = input("Update Email: ").strip()
+        new_email = input(
+            f"Update Email [{staff[5]}]: "
+        ).strip()
 
         if new_email == "":
             new_email = staff[5]
             break
-        if "@" in new_email and "." in new_email:
-            at_position = new_email.index("@")
-            dot_position = new_email.rindex(".")
 
-            if at_position > 0 and dot_position > at_position + 1 and dot_position < len(new_email) - 1:
-                break
-            else:
-                print("\nPlease enter a valid email")
-        else:
-            print("E\nPlease enter a valid email")
+        if "@" not in new_email:
+            print("Please enter a valid email address.")
+            continue
 
-    while True:
-        new_phone = input("Update Phone Number: ").strip()
-        if new_phone == "":
-            new_phone = None
+        at_position = new_email.find("@")
+        dot_position = new_email.rfind(".")
+
+        if (
+            at_position > 0
+            and dot_position > at_position + 1
+            and dot_position < len(new_email) - 1
+        ):
             break
 
-        cleaned_number = new_phone.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
+        print("Please enter a valid email address.")=
+    while True:
+        current_phone = staff[6]
+
+        new_phone = input(
+            f"Update Phone Number [{current_phone or 'None'}]: "
+        ).strip()
+
+        # Pressing Enter keeps the existing phone number.
+        if new_phone == "":
+            new_phone = current_phone
+            break
+
+        # Allow the same common phone formatting as before.
+        cleaned_number = (
+            new_phone
+            .replace("+", "")
+            .replace("-", "")
+            .replace(" ", "")
+            .replace("(", "")
+            .replace(")", "")
+        )
 
         if 3 <= len(cleaned_number) <= 17 and cleaned_number.isdigit():
             break
-        else:
-            print("\nPlease enter a valid phone number:")
+
+        print("Please enter a valid phone number.")
 
     while True:
-        new_position = input("Update Position (Administrator/Moderator/Staff): ").strip()
+        new_position = input(
+            f"Update Position "
+            f"(Administrator/Moderator/Staff) [{staff[7]}]: "
+        ).strip()
 
         if new_position == "":
             new_position = staff[7]
             break
 
-        if new_position in ["Administrator", "Moderator", "Staff"]:
+        position_lookup = {
+            "administrator": "Administrator",
+            "moderator": "Moderator",
+            "staff": "Staff"
+        }
+
+        new_position = position_lookup.get(new_position.lower())
+
+        if new_position:
             break
-        else:
-            print("Invalid position. Please enter Administrator, Moderator or Staff.")
 
-    cursor.execute("""
-        UPDATE Staff
-        SET FirstName = ?,
-            LastName = ?,
-            Username = ?,
-            Password = ?,
-            Email = ?,
-            PhoneNumber = ?,
-            Position = ?
-        WHERE StaffID = ?
-    """, (
-        new_firstname,
-        new_lastname,
-        new_username,
-        new_password,
-        new_email,
-        new_phone,
-        new_position,
-        staffid
-    ))
+        print(
+            "Invalid position. Please enter "
+            "Administrator, Moderator or Staff."
+        )
 
-    conn.commit()
+    print("\nNew Staff Details:")
+    print(f"First Name:  {new_firstname}")
+    print(f"Last Name:   {new_lastname}")
+    print(f"Username:    {new_username}")
+    print(f"Email:       {new_email}")
+    print(f"Phone:       {new_phone}")
+    print(f"Position:    {new_position}")
 
-    print("\nStaff member updated successfully.")
+    while True:
+        confirm = input(
+            "\nSave these changes? (yes/no): "
+        ).strip().lower()
+
+        if confirm == "yes":
+            break
+
+        if confirm == "no":
+            print("\nChanges cancelled.")
+            pause_screen()
+            return
+
+        print("Please enter 'yes' or 'no'.")
+
+    try:
+        cursor.execute("""
+            UPDATE Staff
+            SET FirstName = ?,
+                LastName = ?,
+                Username = ?,
+                Password = ?,
+                Email = ?,
+                PhoneNumber = ?,
+                Position = ?
+            WHERE StaffID = ?
+        """, (
+            new_firstname,
+            new_lastname,
+            new_username,
+            new_password,
+            new_email,
+            new_phone,
+            new_position,
+            staff_id
+        ))
+
+        conn.commit()
+
+        print("\nStaff member updated successfully.")
+
+    except sqlite3.Error as error:
+        conn.rollback()
+        print(f"\nUnable to update staff member: {error}")
+
     pause_screen()
-
 
 
 def create_new_staff_member():
@@ -3648,127 +3602,199 @@ def create_new_staff_member():
     print("-" * 60)
     print("                  Add New Staff Member")
     print("-" * 60)
-    
-    cursor.execute("SELECT MAX(StaffID) FROM Staff;")
+
+    cursor.execute("""
+        SELECT StaffID
+        FROM Staff
+        WHERE StaffID LIKE 'S%'
+        ORDER BY CAST(SUBSTR(StaffID, 2) AS INTEGER) DESC
+        LIMIT 1
+    """)
+
     result = cursor.fetchone()
 
-    if result[0] is None:
+    if result is None:
         next_number = 1
     else:
-        next_number = int(result[0][1:]) + 1
+        try:
+            next_number = int(result[0][1:]) + 1
+        except (ValueError, TypeError):
+            next_number = 1
 
     staff_id = f"S{next_number:03d}"
 
     print(f"Staff ID: {staff_id}")
-
     while True:
-        firstname = input("Enter FirstName: ")
+        firstname = input("Enter First Name: ").strip()
 
         if firstname == "":
-            print("Name can not be blank:")
-            pause_screen()
-        else:
-            break
-
-    while True:
-        lastname = input("Enter LastName: ")
-
-        if lastname == "":
-            print("Name can not be blank:")
-            pause_screen()
-        else:
-            break
-
-    while True:
-        username = input("Enter Username: ")
-
-        if username == "":
-            print("Enter a valid username:")
+            print("First name cannot be blank.")
             continue
 
-        cursor.execute("SELECT Username FROM Staff WHERE Username = ?", (username,))
-        not_unique = cursor.fetchone()
+        if not firstname.replace(" ", "").isalpha():
+            print("First name can only contain letters.")
+            continue
 
-        if not_unique:
-            print("This username already exists")
-        else:
-            break
+        break
 
     while True:
-        password = input("Enter password: ").strip()
+        lastname = input("Enter Last Name: ").strip()
 
-        if password == "":
-            print("Enter a password:")
-            pause_screen()
-        elif len(password) < 8:
-            print("Password must be at least 8 characters long.")
-            pause_screen()
-        elif not any(char.isupper() for char in password):
-            print("Password must contain at least one uppercase letter.")
-            pause_screen()
-        elif not any(char.islower() for char in password):
-            print("Password must contain at least one lowercase letter.")
-            pause_screen()
-        elif not any(not char.isalnum() for char in password):
-            print("Password must contain at least one symbol (e.g., !, @, #, $, etc.).")
-            pause_screen()
+        if lastname == "":
+            print("Last name cannot be blank.")
+            continue
+
+        if not lastname.replace(" ", "").isalpha():
+            print("Last name can only contain letters.")
+            continue
+
+        break
+    while True:
+        username = input("Enter Username: ").strip()
+
+        if username == "":
+            print("Username cannot be blank.")
+            continue
+
+        cursor.execute("""
+            SELECT StaffID
+            FROM Staff
+            WHERE Username = ?
+        """, (username,))
+
+        if cursor.fetchone():
+            print("This username already exists.")
         else:
             break
+    while True:
+        password = input("Enter Password: ").strip()
+
+        if password == "":
+            print("Password cannot be blank.")
+            continue
+
+        if len(password) < 8:
+            print("Password must be at least 8 characters long.")
+            continue
+
+        if not any(char.isupper() for char in password):
+            print("Password must contain at least one uppercase letter.")
+            continue
+
+        if not any(char.islower() for char in password):
+            print("Password must contain at least one lowercase letter.")
+            continue
+
+        if not any(not char.isalnum() for char in password):
+            print(
+                "Password must contain at least one symbol "
+                "(e.g., !, @, #, $)."
+            )
+            continue
+
+        break
+
     while True:
         number = input("Enter Phone Number: ").strip()
 
         if number == "":
-            print("\nPhone number cannot be blank.")
-            pause_screen()
+            print("Phone number cannot be blank.")
             continue
 
-        cleaned_number = number.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
+        cleaned_number = (
+            number
+            .replace("+", "")
+            .replace("-", "")
+            .replace(" ", "")
+            .replace("(", "")
+            .replace(")", "")
+        )
 
         if 3 <= len(cleaned_number) <= 17 and cleaned_number.isdigit():
             break
-        else:
-            print("\nPlease enter a valid phone number:")
+
+        print("Please enter a valid phone number.")
 
     while True:
-        email = input("Update Email: ").strip()
+        email = input("Enter Email: ").strip()
 
         if email == "":
-            print("\nPlease enter a valid email:")
+            print("Email cannot be blank.")
             continue
 
-        if "@" in email and "." in email:
-            at_position = email.index("@")
-            dot_position = email.rindex(".")
+        if "@" not in email:
+            print("Please enter a valid email address.")
+            continue
 
-            if at_position > 0 and dot_position > at_position + 1 and dot_position < len(email) - 1:
-                break
-            else:
-                print("\nPlease enter a valid email")
-        else:
-            print("E\nPlease enter a valid email")
+        at_position = email.find("@")
+        dot_position = email.rfind(".")
+
+        if (
+            at_position > 0
+            and dot_position > at_position + 1
+            and dot_position < len(email) - 1
+        ):
+            break
+
+        print("Please enter a valid email address.")
 
     while True:
-        position = input("Enter position: ")
+        position = input(
+            "Enter Position (Staff/Moderator/Administrator): "
+        ).strip()
 
-        if position in ['Staff', 'Moderator', 'Administrator']:
+        position_lookup = {
+            "staff": "Staff",
+            "moderator": "Moderator",
+            "administrator": "Administrator"
+        }
+
+        position = position_lookup.get(position.lower())
+
+        if position:
             break
-        else:
-            print("Enter position from 'Staff', 'Moderator' or 'Administrator'")
-            pause_screen()
 
-    db_number = number
+        print(
+            "Invalid position. Please enter "
+            "Staff, Moderator or Administrator."
+        )
 
-    cursor.execute(
-        """
-        INSERT INTO Staff (StaffID, FirstName, LastName, Username, Password, Email, PhoneNumber, Position)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (staff_id, firstname, lastname, username, password, email, db_number, position)
-    )
+    try:
+        cursor.execute("""
+            INSERT INTO Staff
+            (
+                StaffID,
+                FirstName,
+                LastName,
+                Username,
+                Password,
+                Email,
+                PhoneNumber,
+                Position
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            staff_id,
+            firstname,
+            lastname,
+            username,
+            password,
+            email,
+            number,
+            position
+        ))
 
-    conn.commit()
+        conn.commit()
 
-    print(f"\nNew staff member '{username}' added successfully.")
+        print(
+            f"\nNew staff member '{username}' "
+            f"added successfully."
+        )
+
+    except sqlite3.Error as error:
+        conn.rollback()
+        print(f"\nUnable to create staff member: {error}")
+
     pause_screen()
 
 
@@ -3779,295 +3805,512 @@ def delete_staff_member():
         print("-" * 60)
         print("                  Delete Staff Member")
         print("-" * 60)
-        search = input("(type 'back' to go back)\nFind Staff member to delete by ID or Username: ").lower().strip()
+
+        search = input(
+            "(type 'back' to go back)\n"
+            "Find Staff Member to Delete by ID or Username: "
+        ).strip().lower()
 
         if search == "back":
             break
-
-        elif search == "id":
+        if search == "id":
             while True:
-                id_input = input("Enter Staff ID (or type 'back'): ").strip().upper()
-                if id_input.lower() == "back":
+                staff_id = input(
+                    "Enter Staff ID (or type 'back'): "
+                ).strip().upper()
+
+                if staff_id.lower() == "back":
                     break
-                
-                cursor.execute("SELECT * FROM Staff WHERE StaffID = ?", (id_input,))
+
+                cursor.execute("""
+                    SELECT *
+                    FROM Staff
+                    WHERE StaffID = ?
+                """, (staff_id,))
+
                 staff = cursor.fetchone()
 
-                if staff:
-                    print_as_table(cursor, staff)
-                    
-                    # FIXED: Added a loop just for confirmation so typos don't break the record search
-                    while True:
-                        confirm = input("Are you sure you want to delete staff member? (yes/no): ").lower().strip()
+                if not staff:
+                    print(
+                        "\nNo staff member found with that ID. "
+                        "Please try again."
+                    )
+                    pause_screen()
+                    continue
 
-                        if confirm == "yes":
-                            cursor.execute("DELETE FROM TournamentStaff WHERE StaffID = ?", (id_input,))
-                            cursor.execute("DELETE FROM Staff WHERE StaffID = ?", (id_input,))
-                            conn.commit()
+                print("\nStaff member found:")
+                print_as_table(cursor, [staff])
 
-                            print(f"Staff member deleted successfully.")
-                            pause_screen()
-                            break
+                while True:
+                    confirm = input(
+                        "\nAre you sure you want to delete this "
+                        "staff member? (yes/no): "
+                    ).strip().lower()
 
-                        elif confirm == "no":
-                            print("Deletion cancelled.")
-                            pause_screen()
-                            break
+                    if confirm == "no":
+                        print("\nDeletion cancelled.")
+                        pause_screen()
+                        break
 
-                        else:
-                            print("\nPlease select from 'yes' or 'no'")
-                    
-                    # Breaks out of the id_input loop back to the main search selection screen
+                    if confirm != "yes":
+                        print("Please enter 'yes' or 'no'.")
+                        continue
+
+                    try:
+                        # Remove related tournament records first.
+                        cursor.execute("""
+                            DELETE FROM TournamentStaff
+                            WHERE StaffID = ?
+                        """, (staff_id,))
+
+                        # Then remove the staff member.
+                        cursor.execute("""
+                            DELETE FROM Staff
+                            WHERE StaffID = ?
+                        """, (staff_id,))
+
+                        conn.commit()
+
+                        print("\nStaff member deleted successfully.")
+
+                    except sqlite3.Error as error:
+                        conn.rollback()
+                        print(
+                            f"\nUnable to delete staff member: {error}"
+                        )
+
+                    pause_screen()
                     break
 
-                else:
-                    print("No staff member found. Please try again.")
-                    pause_screen()
-
+                # Return to ID/Username selection.
+                break
         elif search == "username":
             while True:
-                username = input("Enter Staff username (or type 'back'): ").strip()
+                username = input(
+                    "Enter Staff Username (or type 'back'): "
+                ).strip()
+
                 if username.lower() == "back":
                     break
-                
-                cursor.execute("SELECT * FROM Staff WHERE Username = ?", (username,))
+
+                cursor.execute("""
+                    SELECT *
+                    FROM Staff
+                    WHERE Username = ?
+                """, (username,))
+
                 staff = cursor.fetchone()
 
-                if staff:
-                    print_as_table(cursor, staff)
-                    while True:
-                        confirm = input("Are you sure you want to delete staff member? (yes/no): ").lower().strip()
+                if not staff:
+                    print(
+                        "\nNo staff member found with that username. "
+                        "Please try again."
+                    )
+                    pause_screen()
+                    continue
 
-                        if confirm == "yes":
-                            cursor.execute("""
-                                DELETE FROM TournamentStaff
-                                WHERE staffid in (
-                                    SELECT StaffID FROM Staff WHERE username = ?
-                                );""", (username,))
-                            cursor.execute("DELETE FROM Staff WHERE Username = ?", (username,))
-                            conn.commit()
+                staff_id = staff[0]
 
-                            print(f"Staff member deleted successfully.")
-                            pause_screen()
-                            break
+                print("\nStaff member found:")
+                print_as_table(cursor, [staff])
 
-                        elif confirm == "no":
-                            print("Deletion cancelled.")
-                            pause_screen()
-                            break
+                while True:
+                    confirm = input(
+                        "\nAre you sure you want to delete this "
+                        "staff member? (yes/no): "
+                    ).strip().lower()
 
-                        else:
-                            print("\nPlease select from 'yes' or 'no'")
+                    if confirm == "no":
+                        print("\nDeletion cancelled.")
+                        pause_screen()
+                        break
+
+                    if confirm != "yes":
+                        print("Please enter 'yes' or 'no'.")
+                        continue
+
+                    try:
+                        # Use StaffID rather than username so the
+                        # correct record is always deleted.
+                        cursor.execute("""
+                            DELETE FROM TournamentStaff
+                            WHERE StaffID = ?
+                        """, (staff_id,))
+
+                        cursor.execute("""
+                            DELETE FROM Staff
+                            WHERE StaffID = ?
+                        """, (staff_id,))
+
+                        conn.commit()
+
+                        print("\nStaff member deleted successfully.")
+
+                    except sqlite3.Error as error:
+                        conn.rollback()
+                        print(
+                            f"\nUnable to delete staff member: {error}"
+                        )
+
+                    pause_screen()
                     break
 
-                else:
-                    print("No staff member found. Please try again.")
-                    pause_screen()
+                break
+
         else:
-            print("Invalid search option. Please enter 'ID' or 'Username'.")
+            print(
+                "\nInvalid search option. "
+                "Please enter 'ID', 'Username' or 'back'."
+            )
             pause_screen()
 
-        clear_screen()
+
 
 
 def generate_analytical_reports():
     while True:
         clear_screen()
         print("-" * 90)
-        print("                           Generate Analytical Reports")
+        print("                     Generate Analytical Reports")
         print("-" * 90)
         print("  [1] Display the players with the largest card collections.")
-        print("  [2] Display the most commonly owned card")
+        print("  [2] Display the most commonly owned card.")
         print("  [3] Display cards ordered by rarity.")
-        print("  [4] Calculate the maximum and minimum HP. ")
-        print("  [5] Display the total number of players/cards/decks/tournaments/tournament registries")
+        print("  [4] Calculate the maximum and minimum HP.")
+        print("  [5] Display total players/cards/decks/tournaments/registrations/matches.")
         print("  [0] Back to main menu")
-        choice = input("")
+        print("")
+
+        choice = input("Select an option: ").strip()
         if choice == "0":
             break
         elif choice == "1":
             clear_screen()
             print("-" * 90)
-            print("Players With The Largest Collections")
+            print("                 Players With The Largest Collections")
             print("-" * 90)
-            cursor.execute("""
-                SELECT Player.PlayerID, Player.Username, SUM(PlayerCollection.Quantity) AS "Number of Cards"
-                FROM Player 
-                JOIN PlayerCollection ON PlayerCollection.PlayerID = Player.PlayerID
-                GROUP BY Player.PlayerID
-                ORDER BY "Number of Cards" DESC
-                LIMIT 10;""")
-            players = cursor.fetchall()
-            if players:
-                print_as_table(cursor, players)
-                pause_screen()
-            else:
-                print("No players found")
-                pause_screen()
 
-        elif choice == "2":
-            clear_screen()
-            print("-" * 90)
-            print("Most Commonly Owned Cards")
-            print("-" * 90)
-            cursor.execute("""
-               SELECT *, SUM(PlayerCollection.Quantity) AS 'Total Owned'
-                FROM Card 
-                JOIN PlayerCollection ON PlayerCollection.CardID = Card.CardID
-                GROUP BY Card.CardID
-                ORDER BY "Total Owned" DESC
-                LIMIT 10""")
-            cards = cursor.fetchall()
-            if cards:
-                print_as_table(cursor, cards)
-            else:
-                print("No cards found")
-                pause_screen()
+            try:
+                cursor.execute("""
+                    SELECT
+                        Player.PlayerID,
+                        Player.Username,
+                        SUM(PlayerCollection.Quantity) AS "Number of Cards"
+                    FROM Player
+                    JOIN PlayerCollection
+                        ON PlayerCollection.PlayerID = Player.PlayerID
+                    GROUP BY Player.PlayerID, Player.Username
+                    ORDER BY SUM(PlayerCollection.Quantity) DESC
+                    LIMIT 10
+                """)
 
+                players = cursor.fetchall()
+
+                if players:
+                    print_as_table(cursor, players)
+                else:
+                    print("\nNo players with card collections were found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
+
+            pause_screen()
+            print("-" * 90)
+            print("                    Most Commonly Owned Cards")
+            print("-" * 90)
+
+            try:
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardType,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        SUM(PlayerCollection.Quantity) AS "Total Owned"
+                    FROM Card
+                    JOIN PlayerCollection
+                        ON PlayerCollection.CardID = Card.CardID
+                    GROUP BY
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardType,
+                        Card.CardNumber,
+                        Card.Rarity
+                    ORDER BY SUM(PlayerCollection.Quantity) DESC,
+                             Card.CardName ASC
+                    LIMIT 10
+                """)
+
+                cards = cursor.fetchall()
+
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("\nNo owned cards found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
             print("")
             print("-" * 90)
-            print("Most Commonly Owned Creature Cards")
+            print("                 Most Commonly Owned Creature Cards")
             print("-" * 90)
-            cursor.execute("""
-               SELECT *, SUM(PlayerCollection.Quantity) AS 'Total Owned'
-                FROM Card 
-                JOIN PlayerCollection ON PlayerCollection.CardID = Card.CardID
-                WHERE Card.CardType = 'Creature Card'
-                GROUP BY Card.CardID
-                ORDER BY "Total Owned" DESC
-                LIMIT 10""")
-            cards = cursor.fetchall()
-            if cards:
-                print_as_table(cursor, cards)
-            else:
-                print("No cards found")
-                pause_screen()
 
+            try:
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        SUM(PlayerCollection.Quantity) AS "Total Owned"
+                    FROM Card
+                    JOIN PlayerCollection
+                        ON PlayerCollection.CardID = Card.CardID
+                    WHERE Card.CardType = 'Creature Card'
+                    GROUP BY
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity
+                    ORDER BY SUM(PlayerCollection.Quantity) DESC,
+                             Card.CardName ASC
+                    LIMIT 10
+                """)
+
+                cards = cursor.fetchall()
+
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("\nNo owned Creature Cards found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
             print("")
             print("-" * 90)
-            print("Most Commonly Owned Trainer Cards")
+            print("                  Most Commonly Owned Trainer Cards")
             print("-" * 90)
-            cursor.execute("""
-               SELECT *, SUM(PlayerCollection.Quantity) AS 'Total Owned'
-                FROM Card 
-                JOIN PlayerCollection ON PlayerCollection.CardID = Card.CardID
-                WHERE Card.CardType = 'Trainer Card'
-                GROUP BY Card.CardID
-                ORDER BY "Total Owned" DESC
-                LIMIT 10""")
-            cards = cursor.fetchall()
-            if cards:
-                print_as_table(cursor, cards)
-            else:
-                print("No cards found")
-                pause_screen()
 
+            try:
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        SUM(PlayerCollection.Quantity) AS "Total Owned"
+                    FROM Card
+                    JOIN PlayerCollection
+                        ON PlayerCollection.CardID = Card.CardID
+                    WHERE Card.CardType = 'Trainer Card'
+                    GROUP BY
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity
+                    ORDER BY SUM(PlayerCollection.Quantity) DESC,
+                             Card.CardName ASC
+                    LIMIT 10
+                """)
+
+                cards = cursor.fetchall()
+
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("\nNo owned Trainer Cards found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
             print("")
             print("-" * 90)
-            print("Most Commonly Owned Energy Cards")
+            print("                   Most Commonly Owned Energy Cards")
             print("-" * 90)
-            cursor.execute("""
-               SELECT *, SUM(PlayerCollection.Quantity) AS 'Total Owned'
-                FROM Card 
-                JOIN PlayerCollection ON PlayerCollection.CardID = Card.CardID
-                WHERE Card.CardType = 'Energy Card'
-                GROUP BY Card.CardID
-                ORDER BY "Total Owned" DESC
-                LIMIT 10""")
-            cards = cursor.fetchall()
-            if cards:
-                print_as_table(cursor, cards)
-                pause_screen()
-            else:
-                print("No cards found")
-                pause_screen()
 
+            try:
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        SUM(PlayerCollection.Quantity) AS "Total Owned"
+                    FROM Card
+                    JOIN PlayerCollection
+                        ON PlayerCollection.CardID = Card.CardID
+                    WHERE Card.CardType = 'Energy Card'
+                    GROUP BY
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity
+                    ORDER BY SUM(PlayerCollection.Quantity) DESC,
+                             Card.CardName ASC
+                    LIMIT 10
+                """)
+
+                cards = cursor.fetchall()
+
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("\nNo owned Energy Cards found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
+
+            pause_screen()
         elif choice == "3":
             clear_screen()
             print("-" * 90)
-            print("Cards Ordered By Rarity")
+            print("                       Cards Ordered By Rarity")
             print("-" * 90)
-            cursor.execute("""
-            SELECT * FROM Card
-            ORDER BY
-                CASE Card.Rarity
-                    WHEN 'Special Illustration Rare' THEN 1
-                    WHEN 'Illustration Rare'         THEN 2
-                    WHEN 'Hyper Rare'                THEN 3
-                    WHEN 'Ultra Rare'                THEN 4
-                    WHEN 'ACE SPEC Rare'             THEN 5
-                    WHEN 'Double Rare'               THEN 6
-                    WHEN 'Rare Holo'                 THEN 7
-                    WHEN 'Rare'                      THEN 8
-                    WHEN 'Uncommon'                  THEN 9
-                    WHEN 'Common'                    THEN 10
-                    ELSE 11
-                END ASC""")
-            cards = cursor.fetchall()
-            if cards:
-                print_as_table(cursor, cards)
-                pause_screen()
-            else:
-                print("no cards found")
-                pause_screen()
 
+            try:
+                cursor.execute("""
+                    SELECT *
+                    FROM Card
+                    ORDER BY
+                        CASE
+                            WHEN UPPER(Rarity) LIKE '%SPECIAL ILLUSTRATION%' THEN 1
+                            WHEN UPPER(Rarity) LIKE '%ILLUSTRATION RARE%' THEN 2
+                            WHEN UPPER(Rarity) LIKE '%HYPER RARE%' THEN 3
+                            WHEN UPPER(Rarity) LIKE '%ULTRA RARE%' THEN 4
+                            WHEN UPPER(Rarity) LIKE '%ACE SPEC%' THEN 5
+                            WHEN UPPER(Rarity) LIKE '%DOUBLE RARE%' THEN 6
+                            WHEN UPPER(Rarity) LIKE '%RARE HOLO%' THEN 7
+                            WHEN UPPER(Rarity) LIKE '%RARE%' THEN 8
+                            WHEN UPPER(Rarity) LIKE '%UNCOMMON%' THEN 9
+                            WHEN UPPER(Rarity) LIKE '%COMMON%' THEN 10
+                            ELSE 11
+                        END ASC,
+                        CardName ASC
+                """)
+
+                cards = cursor.fetchall()
+
+                if cards:
+                    print_as_table(cursor, cards)
+                else:
+                    print("\nNo cards found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate report: {error}")
+
+            pause_screen()
         elif choice == "4":
             clear_screen()
-            cursor.execute("""
-                SELECT Card.CardID, Card.CardName, Card.CardNumber, Card.Rarity, CreatureCard.HP
-                FROM Card
-                JOIN CreatureCard ON Card.CardID = CreatureCard.CardID
-                ORDER BY HP DESC
-                LIMIT 1;
-            """)
-            highesthp = cursor.fetchone()
-            cursor.execute("""
-                SELECT Card.CardID, Card.CardName, Card.CardNumber, Card.Rarity, CreatureCard.HP
-                FROM Card
-                JOIN CreatureCard ON Card.CardID = CreatureCard.CardID
-                ORDER BY HP ASC
-                LIMIT 1;
-            """)
-            lowesthp = cursor.fetchone()
-            if highesthp and lowesthp:
-                print("Card with the Highest HP:")
-                print_as_table(cursor, highesthp)
-                print("\nCard with the Lowest HP:")
-                print_as_table(cursor, lowesthp)
-                pause_screen()
-            else:
-                print("no cards found")
-                pause_screen()
+            print("-" * 90)
+            print("                    Maximum and Minimum HP")
+            print("-" * 90)
 
+            try:
+                # Highest HP
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        CreatureCard.HP
+                    FROM Card
+                    JOIN CreatureCard
+                        ON Card.CardID = CreatureCard.CardID
+                    ORDER BY CreatureCard.HP DESC
+                    LIMIT 1
+                """)
+
+                highesthp = cursor.fetchone()
+
+                # Lowest HP
+                cursor.execute("""
+                    SELECT
+                        Card.CardID,
+                        Card.CardName,
+                        Card.CardNumber,
+                        Card.Rarity,
+                        CreatureCard.HP
+                    FROM Card
+                    JOIN CreatureCard
+                        ON Card.CardID = CreatureCard.CardID
+                    ORDER BY CreatureCard.HP ASC
+                    LIMIT 1
+                """)
+
+                lowesthp = cursor.fetchone()
+
+                if highesthp and lowesthp:
+                    print("Card with the Highest HP:")
+                    print_as_table(cursor, [highesthp])
+
+                    print("\nCard with the Lowest HP:")
+                    print_as_table(cursor, [lowesthp])
+
+                else:
+                    print("\nNo Creature Cards with HP were found.")
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate HP report: {error}")
+
+            pause_screen()
         elif choice == "5":
             clear_screen()
-            cursor.execute("SELECT COUNT(PlayerID) FROM Players")
-            players = cursor.fetchone() 
-            cursor.execute("SELECT COUNT(CardID) FROM Card")
-            cards = cursor.fetchone()  
-            cursor.execute("SELECT COUNT(DeckID) FROM Deck")
-            decks = cursor.fetchone()   
-            cursor.execute("SELECT COUNT(tournamentID) FROM tournament")
-            tournaments = cursor.fetchone()   
-            cursor.execute("SELECT COUNT(PlayerID) FROM RegistrationList")
-            registerations = cursor.fetchone() 
-            cursor.execute("SELECT COUNT(MatchesID) FROM Matches WHERE MatchStatus = 'Finished'")
-            matches = cursor.fetchone() 
+            print("-" * 60)
+            print("                     System Statistics")
+            print("-" * 60)
 
-            stat_template = "  {:<25} : {}"
+            try:
+                cursor.execute("SELECT COUNT(*) FROM Player")
+                players = cursor.fetchone()[0]
 
-            print("-" * 55)
-            print(stat_template.format("Total PLayers", players[0]))
-            print(stat_template.format("Total Cards", cards[0]))
-            print(stat_template.format("Total Decks", decks[0]))
-            print(stat_template.format("Total Tournaments", tournaments[0]))
-            print(stat_template.format("Total Tournament Registrations", registrations[0]))
-            print(stat_template.format("Total Matches Played", player_totalmatches[0]))
-            print("-" * 55)
+                cursor.execute("SELECT COUNT(*) FROM Card")
+                cards = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM Deck")
+                decks = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM Tournament")
+                tournaments = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM RegistrationList")
+                registrations = cursor.fetchone()[0]
+
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM Matches
+                    WHERE MatchStatus = 'Finished'
+                """)
+                matches = cursor.fetchone()[0]
+                stat_template = "  {:<35} : {}"
+
+                print("")
+                print(stat_template.format(
+                    "Total Players", players
+                ))
+                print(stat_template.format(
+                    "Total Cards", cards
+                ))
+                print(stat_template.format(
+                    "Total Decks", decks
+                ))
+                print(stat_template.format(
+                    "Total Tournaments", tournaments
+                ))
+                print(stat_template.format(
+                    "Total Tournament Registrations", registrations
+                ))
+                print(stat_template.format(
+                    "Total Matches Played", matches
+                ))
+
+                print("-" * 60)
+
+            except sqlite3.Error as error:
+                print(f"\nUnable to generate statistics: {error}")
             pause_screen()
-
         else:
-            print("Invalid option selected")
+            print("\nInvalid option selected.")
             pause_screen()
 
 
@@ -4106,18 +4349,20 @@ def main():
                     elif manage_tournaments_option == "1":
                         view_tournament_details()
                     elif manage_tournaments_option == "2":
-                        edit_tournament_details()
+                        register_remove_players()
                     elif manage_tournaments_option == "3":
+                        view_venues()
+                    elif manage_tournaments_option == "4":
                         if user_position in ['Moderator', 'Administrator']:
-                            register_remove_players()
+                            edit_tournament_details()
                         else: 
                             continue
-                    elif manage_tournaments_option == "4":
+                    elif manage_tournaments_option == "5":
                         if user_position in ['Moderator', 'Administrator']:
                             create_new_tournament()
                         else: 
                             continue
-                    elif manage_tournaments_option == "5":
+                    elif manage_tournaments_option == "6":
                         if user_position in ['Moderator', 'Administrator']:
                             cancel_tournament()
                         else: 
