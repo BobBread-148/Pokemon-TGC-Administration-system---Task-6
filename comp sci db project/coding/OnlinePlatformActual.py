@@ -184,8 +184,7 @@ def view_account_details():
                     pause_screen()
                     break
                 else:
-                    print("No player found with that ID. Please try again.")
-                    pause_screen()
+                    print("No player found with that ID. Please try again.\n")
 
         elif search == "username":
             while True:
@@ -200,8 +199,7 @@ def view_account_details():
                     pause_screen()
                     break
                 else:
-                    print("No player found with that username. Please try again.")
-                    pause_screen()
+                    print("No player found with that username. Please try again.\n")
 
         elif search == "email":
             while True:
@@ -216,8 +214,7 @@ def view_account_details():
                     pause_screen()
                     break
                 else:
-                    print("No player found with that email. Please try again.")
-                    pause_screen()
+                    print("No player found with that email. Please try again.\n")
         else:
             continue
         clear_screen()
@@ -249,8 +246,7 @@ def edit_account_details():
                     break
 
                 else:
-                    print("No player found with that ID. Please try again.")
-                    pause_screen()
+                    print("No player found with that ID. Please try again.\n")
 
         elif search == "username":
             while True:
@@ -265,8 +261,7 @@ def edit_account_details():
                     break
 
                 else:
-                    print("No player found with that username. Please try again.")
-                    pause_screen()
+                    print("No player found with that username. Please try again.\n")
         else:
             continue
         clear_screen()
@@ -369,8 +364,7 @@ def view_player_stats():
                     player_stats(player)
                     break
                 else:
-                    print("No player found with that ID. Please try again.")
-                    pause_screen()
+                    print("No player found with that ID. Please try again.\n")
 
         elif search == "username":
             while True:
@@ -384,8 +378,7 @@ def view_player_stats():
                     player_stats(player)
                     break
                 else:
-                    print("No player found with that username. Please try again.")
-                    pause_screen()
+                    print("No player found with that username. Please try again.\n")
         else:
             continue
         clear_screen()
@@ -619,18 +612,14 @@ def delete_player():
                         print("Deletion cancelled.")
                         pause_screen()
                         break
-
                     else:
                         print("\nPlease select from 'yes' or 'no'")
-
                 else:
-                    print("No player found with that ID. Please try again.")
-                    pause_screen()
+                    print("No player found with that ID. Please try again.\n")
 
         elif search == "username":
             while True:
                 username = input("Enter Player Username (or type 'back'): ").strip()
-
                 if username.lower() == "back":
                     break
                 
@@ -675,8 +664,7 @@ def delete_player():
                     else:
                         print("\nPlease select from 'yes' or 'no'")
                 else:
-                    print("No player found with that username. Please try again.")
-                    pause_screen()
+                    print("No player found with that username. Please try again.\n")
         else:
             continue
         clear_screen()
@@ -767,8 +755,7 @@ def view_tournament_details():
                             pause_screen()
                             break
                         else:
-                            print("No tournament found with that ID. Please try again.")
-                            pause_screen()
+                            print("No tournament found with that ID. Please try again.\n")
                 elif search == "name":
                     while True:
                         name_input = input("Enter Tournament Name (or type 'back'): ").strip()
@@ -781,8 +768,7 @@ def view_tournament_details():
                             pause_screen()
                             break
                         else:
-                            print("No tournament found with that name. Please try again.")
-                            pause_screen()
+                            print("No tournament found with that name. Please try again.\n")
                 else:
                     continue
         else:
@@ -826,8 +812,7 @@ def edit_tournament_details():
                     edit_tournament_details_checks(tournament, cursor, conn)
                     break
                 else:
-                    print("No Tournament found with that ID. Please try again.")
-                    pause_screen()
+                    print("No Tournament found with that ID. Please try again.\n")
 
         elif search == "name":
             while True:
@@ -842,8 +827,7 @@ def edit_tournament_details():
                     edit_tournament_details_checks(tournament, cursor, conn)
                     break
                 else:
-                    print("No Tournament found with that name. Please try again.")
-                    pause_screen()
+                    print("No Tournament found with that name. Please try again.\n")
         else:
             continue
         clear_screen()
@@ -913,10 +897,10 @@ def edit_tournament_details_checks(tournament, cursor, conn):
         if new_status == "":
             new_status = tournament[4]
             break
-
-        if new_status in ['Upcoming', 'Ongoing', 'Finished']:
+        elif new_status in ['Upcoming', 'Ongoing', 'Finished']:
             break
-        print("Invalid status. Please enter Upcoming, Ongoing, or Finished.")
+        else:
+            print("Invalid status. Please enter Upcoming, Ongoing, or Finished.")
 
     #Execute Update Statement
     cursor.execute("""
@@ -942,84 +926,83 @@ def register_remove_players():
         if choice == "back":
             break
         elif choice == "1":
-            clear_screen()
-            print("-" * 60)
-            print("                  Register New Player")
-            print("-" * 60)
+            while True:
+                clear_screen()
+                print("-" * 60)
+                print("                  Register New Player")
+                print("-" * 60)
 
-            tournament_id = input("Enter Tournament ID: ").strip().upper()
-            if tournament_id == "":
-                print("\nEnter a valid Tournament ID.")
+                tournament_id = input("Enter Tournament ID: ").strip().upper()
+                if tournament_id == "":
+                    continue
+
+                cursor.execute("SELECT 1 FROM Tournament WHERE TournamentID = ?",(tournament_id,))
+                if not cursor.fetchone():
+                    print("\nError: Tournament ID does not exist.")
+                    pause_screen()
+                    continue
+
+                player_id = input("Enter Player ID: ").strip().upper()
+                if player_id == "":
+                    print("\nEnter a valid Player ID.")
+                    pause_screen()
+                    continue
+
+                cursor.execute("SELECT 1 FROM Player WHERE PlayerID = ?",(player_id,))
+                if not cursor.fetchone():
+                    print("\nError: Player ID does not exist.")
+                    pause_screen()
+                    continue
+
+                cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
+                if cursor.fetchone():
+                    print("\nError: This player is already registered for this tournament.")
+                    pause_screen()
+                    continue
+
+                cursor.execute("INSERT INTO RegistrationList (TournamentID, PlayerID) VALUES (?, ?)",(tournament_id, player_id))
+
+                conn.commit()
+                print("\nPlayer successfully added.")
                 pause_screen()
-                continue
-
-            cursor.execute("SELECT 1 FROM Tournament WHERE TournamentID = ?",(tournament_id,))
-            if not cursor.fetchone():
-                print("\nError: Tournament ID does not exist.")
-                pause_screen()
-                continue
-
-            player_id = input("Enter Player ID: ").strip().upper()
-            if player_id == "":
-                print("\nEnter a valid Player ID.")
-                pause_screen()
-                continue
-
-            cursor.execute("SELECT 1 FROM Player WHERE PlayerID = ?",(player_id,))
-            if not cursor.fetchone():
-                print("\nError: Player ID does not exist.")
-                pause_screen()
-                continue
-
-            cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
-            if cursor.fetchone():
-                print("\nError: This player is already registered for this tournament.")
-                pause_screen()
-                continue
-
-            cursor.execute("INSERT INTO RegistrationList (TournamentID, PlayerID) VALUES (?, ?)",(tournament_id, player_id))
-
-            conn.commit()
-            print("\nPlayer successfully added.")
-            pause_screen()
 
         elif choice == "2":
-            clear_screen()
-            print("-" * 60)
-            print("                  Remove Player from Tournament")
-            print("-" * 60)
+            while True:
+                clear_screen()
+                print("-" * 60)
+                print("                  Remove Player from Tournament")
+                print("-" * 60)
 
-            tournament_id = input("Enter Tournament ID: ").strip().upper()
-            if tournament_id == "":
-                print("\nEnter a valid Tournament ID.")
+                tournament_id = input("Enter Tournament ID: ").strip().upper()
+                if tournament_id == "":
+                    print("\nEnter a valid Tournament ID.")
+                    pause_screen()
+                    continue
+
+                player_id = input("Enter Player ID: ").strip().upper()
+                if player_id == "":
+                    print("\nEnter a valid Player ID.")
+                    pause_screen()
+                    continue
+
+                cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
+                if not cursor.fetchone():
+                    print("\nError: No such registration found.")
+                    pause_screen()
+                    continue
+
+                # Check whether the player is already involved in a match
+                cursor.execute("SELECT 1 FROM Matches WHERE TournamentID = ? AND (Player1 = ? OR Player2 = ?)",(tournament_id, player_id, player_id))
+                if cursor.fetchone():
+                    print("\nError: This player is involved in a match and cannot be removed.")
+                    pause_screen()
+                    continue
+
+                cursor.execute("DELETE FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
+
+                conn.commit()
+                print("\nPlayer successfully removed from tournament.")
                 pause_screen()
-                continue
-
-            player_id = input("Enter Player ID: ").strip().upper()
-            if player_id == "":
-                print("\nEnter a valid Player ID.")
-                pause_screen()
-                continue
-
-            cursor.execute("SELECT 1 FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
-            if not cursor.fetchone():
-                print("\nError: No such registration found.")
-                pause_screen()
-                continue
-
-            # Check whether the player is already involved in a match
-            cursor.execute("SELECT 1 FROM Matches WHERE TournamentID = ? AND (Player1 = ? OR Player2 = ?)",(tournament_id, player_id, player_id))
-            if cursor.fetchone():
-                print("\nError: This player is involved in a match and cannot be removed.")
-                pause_screen()
-                continue
-
-            cursor.execute("DELETE FROM RegistrationList WHERE TournamentID = ? AND PlayerID = ?",(tournament_id, player_id))
-
-            conn.commit()
-            print("\nPlayer successfully removed from tournament.")
-            pause_screen()
-
         else:
             continue
 
@@ -1191,7 +1174,7 @@ def cancel_tournament():
 
                 if name.lower() == "back":
                     break
-                cursor.execute("SELECT * FROM Tournament WHERE TournamentName = ?",name,))
+                cursor.execute("SELECT * FROM Tournament WHERE TournamentName = ?",(name,))
                 tournament = cursor.fetchone()
 
                 if tournament:
@@ -3371,7 +3354,7 @@ def edit_staff_details():
                 "Please enter 'ID', 'Username' or 'back'."
             )
             pause_screen()
-=
+
 
 def edit_staff_details_checks(staff, cursor):
     # Display the existing staff record.
@@ -3487,7 +3470,7 @@ def edit_staff_details_checks(staff, cursor):
         ):
             break
 
-        print("Please enter a valid email address.")=
+        print("Please enter a valid email address.")
     while True:
         current_phone = staff[6]
 
